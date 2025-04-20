@@ -1,6 +1,7 @@
 import { useState } from 'react';
 // import './App.css';
 import PDFFormSection from './FormPage';
+import LoadingSVG from './LoadingSVG';
 import { Routes, Route, Link } from 'react-router-dom';
 
 export const FileStatus = Object.freeze({
@@ -11,12 +12,17 @@ export const FileStatus = Object.freeze({
 });
 
 function App() {
-  const [fileStatus, setFileStatus] = useState(FileStatus.SUCCESS);
+  const [fileStatus, setFileStatus] = useState(FileStatus.IDLE);
   const [wineList, setWineList] = useState([]);
   const renderContent = () => {
     switch (fileStatus) {
       case FileStatus.PROCESSING:
-        return <p>Processing...</p>;
+        return (
+          <>
+            <LoadingSVG />
+            <p className='text-center text-white font-bold text-xs md:text-sm xl:text-base 2xl:text-lg'>Processing your file...</p>
+          </>
+        )
       case FileStatus.SUCCESS:
         return <FilterableWineList winelist={WINELIST} />;
       case FileStatus.ERROR:
@@ -34,9 +40,9 @@ function App() {
   return (
     <>
       <header className='flex bg-gray-800 place-content-center items-center h-16 md:h-20 lg:h-24 xl:h-28'>
-        <h1 className='text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r to-yellow-100 from-red-700'>Wine List Tool</h1>
+        <h1 className='text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r to-white from-yellow-100'>Wine List Tool</h1>
       </header>
-      <main className="w-9/10 md:w-4/5 xl:w-7/10 place-self-center">
+      <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 place-self-center">
         {/* <Routes>
           <Route path="/" element={<b>test test</b>} />
         </Routes> */}
