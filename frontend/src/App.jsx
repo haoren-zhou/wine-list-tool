@@ -1,8 +1,9 @@
 import { useState } from 'react';
 // import './App.css';
 import PDFFormSection from './FormPage';
+import FilterableWineList from './FilterableWineList';
 import LoadingSVG from './LoadingSVG';
-import { Routes, Route, Link } from 'react-router-dom';
+// import { Routes, Route, Link } from 'react-router-dom';
 
 export const FileStatus = Object.freeze({
   IDLE: 'IDLE', // File not uploaded yet (initial state)
@@ -12,7 +13,7 @@ export const FileStatus = Object.freeze({
 });
 
 function App() {
-  const [fileStatus, setFileStatus] = useState(FileStatus.IDLE);
+  const [fileStatus, setFileStatus] = useState(FileStatus.SUCCESS);
   const [wineList, setWineList] = useState([]);
   const renderContent = () => {
     switch (fileStatus) {
@@ -43,9 +44,6 @@ function App() {
         <h1 className='text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r to-white from-yellow-100'>Wine List Tool</h1>
       </header>
       <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 place-self-center">
-        {/* <Routes>
-          <Route path="/" element={<b>test test</b>} />
-        </Routes> */}
         {renderContent()}
       </main>
       <footer>
@@ -55,61 +53,6 @@ function App() {
   );
 }
 
-function Filters () {
-  // TODO: implement filters
-  // 1. select by wine type
-  // 2. Filter by rating (minimum rating)
-  // 3. Filter by price (maximum price)
-  // 4. Filter by format (750ml, 150ml, etc.)
-  // 5. Sort by (rating, price)
-  return (
-    <form>
-      <button>placeholder</button>
-    </form>
-  );
-}
-
-function WineList({ winelist }) {
-  const [activeIndex, setActiveIndex] = useState(-1); // -1 if no card is open
-  return (
-    <div className='space-y-4'>
-      {winelist.map((wine, index) => {
-        return (
-          <WineCard 
-            wine={wine}
-            isActive={activeIndex === index}
-            onToggle={() => setActiveIndex(activeIndex === index? -1 : index)}
-            key={index}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function WineCard({ wine, isActive, onToggle }) {
-  return (
-    <>
-      <details open={isActive} className='rounded-md marker:content-none'>
-        <summary className='p-4 bg-gray-700 cursor-pointer' onClick={(e) => {
-          e.preventDefault();
-          onToggle();
-        }}>
-          <div className='flex items-center justify-between text-white'>
-            <div className='font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl'>{wine.vivino_match}</div>
-            <div className='font-medium text-right text-xs md:text-sm xl:text-base 2xl:text-lg'>{wine.rating_average} &#9733; ({wine.rating_count} reviews) &middot; {wine.type_name} &middot; ${wine.price}</div>
-          </div>
-        </summary>
-        <div className='p-4 bg-gray-600 text-gray-200 text-xs md:text-sm xl:text-base 2xl:text-lg'>
-          <p><strong>Name on Wine List:</strong> {wine.wine_name} {wine.vintage}</p>
-          <p><strong>Style:</strong> {wine.style_name}</p>
-          <p><strong>Grapes:</strong> {wine.grapes_name}</p>
-          <p><strong>Volume:</strong> {wine.volume}</p>
-        </div>
-      </details>
-    </>
-  );
-}
 
 const WINELIST = [
   {'wine_name': 'Champagne Egly-Ouriet, Les Premices, Extra Brut', 'vivino_match': "Egly-Ouriet Les Prémices Brut Champagne Grand Cru 'Ambonnay'", 'rating_average': 4.2, 'rating_count': 2036, 'type_id': 3, 'style_id': 50, 'grapes': [5], 'vintage': 'N.V.', 'price': 50, 'volume': 150, 'type_name': 'Sparkling', 'style_name': 'French Champagne', 'grapes_name': 'Chardonnay'}, 
@@ -123,16 +66,6 @@ const WINELIST = [
   {'wine_name': 'Château de Beaucastel, Châteauneuf-du-Pape', 'vivino_match': 'Château de Beaucastel Châteauneuf-du-Pape 1995', 'rating_average': 4.3, 'rating_count': 815, 'type_id': 1, 'style_id': 301, 'grapes': [8], 'vintage': 1995, 'price': 680, 'volume': 750, 'type_name': 'Red', 'style_name': 'Southern Rhône Châteauneuf-du-Pape Red', 'grapes_name': 'Grenache'}, 
   {'wine_name': 'Querciabella, Chianti Classico', 'vivino_match': 'Querciabella Chianti Classico 1998', 'rating_average': 4.2, 'rating_count': 98, 'type_id': 1, 'style_id': 887, 'grapes': [16], 'vintage': 1998, 'price': 60, 'volume': 150, 'type_name': 'Red', 'style_name': 'Italian Chianti Classico Red', 'grapes_name': 'Sangiovese'}
 ];
-
-function FilterableWineList ({ winelist }) {
-  return (
-    <div>
-      <Filters />
-      <WineList winelist={winelist}/>
-    </div>
-  )
-};
-
 
 
 export default App;
