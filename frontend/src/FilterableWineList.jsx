@@ -21,7 +21,27 @@ function Filters () {
             <span className='float-right'>{maxPrice == 999999 ? "-" : maxPrice}</span>
             <input type="range" min="0" max="3005" defaultValue="1500" step="5" id='priceThreshold' className='w-full' onInput={(e) => {e.target.value == 3005 ? setMaxPrice(999999) : setMaxPrice(e.target.value)}} />
         </div>
-        <div>asginasogn</div>
+        <div className='col-span-full md:col-span-4'>
+          <label htmlFor='typeFilter'>Wine Type</label>
+          <select className="w-full bg-gray-800 px-4 py-2.5 pr-8 rounded leading-tight" id='typeFilter'>
+            <option>test</option>
+            <option>asdg</option>
+          </select>
+        </div>
+        <div className='col-span-full md:col-span-4'>
+          <label htmlFor='formatFilter'>Format</label>
+          <select className="w-full bg-gray-800 px-4 py-2.5 pr-8 rounded leading-tight" id='formatFilter'>
+            <option>test</option>
+            <option>asdg</option>
+          </select>
+        </div>
+        <div className='col-span-full md:col-span-4'>
+          <label htmlFor='sortByFilter'>Sort By</label>
+          <select className="w-full bg-gray-800 px-4 py-2.5 pr-8 rounded leading-tight" id='sortByFilter'>
+            <option>test</option>
+            <option>asdg</option>
+          </select>
+        </div>
       </div>
     );
   }
