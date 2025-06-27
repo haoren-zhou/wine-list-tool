@@ -25,7 +25,7 @@ app.add_middleware(
 
 config = dotenv_values(".env")
 GEMINI_API_KEY = config.get("GEMINI_API_KEY")
-GEMINI_MODEL_ID = config.get("GEMINI_MODEL_ID") or "gemini-2.0-pro-exp-02-05"
+GEMINI_MODEL_ID = config.get("GEMINI_MODEL_ID") or "gemini-2.5-flash-lite-preview-06-17"
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY must be set in the environment variables or .env file")
 # Configure the Gemini Client
@@ -52,7 +52,7 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
     Output a JSON of all the wines in the wine list only. Ignore all non-wine beverages, house wines or any other non-specific wine names.
     The JSON should have the following keys:
 
-    1. "wine_name": The name of the wine. Return the full name of the wine without modification, ensuring that the name of the wine is complete. Do not include any additional information such as the vintage, region, or grape variety.
+    1. "wine_name": The name of the wine. Return the full name of the wine without modification, ensuring that the name of the wine is complete, including the name of the winery if available. Do not include any additional information such as the vintage, region, or grape variety, unless it is part of the wine name.
     2. "vintage": The vintage of the wine. If the vintage is not specified, return null.
     3. "price": The price of the wine as the nearest integer.
     4. "volume": The volume of the wine in mililitres as an integer. You may have to infer the volume (bottles are generally 750ml, a glass is generally 150/125ml). If unclear, return 750.
@@ -145,7 +145,7 @@ def update_vivino_ids_to_names(wine_details: List[Dict]) -> List[Dict]:
     '''Updates the Vivino IDs to names in the wine details list. Additionally, sets wine vintage to "N.V." for non-vintage wines.
     '''
     for wine in wine_details:
-        wine["type_name"] = WINE_TYPES.get(wine["type_id"], "N.A.")
+        wine["type_name"] = WINE_TYPES.get(wine["type_id"], "Other")
         wine["style_name"] = WINE_STYLES.get(wine["style_id"], "N.A.")
         if wine["grapes"]:
             wine["grapes_name"] = ", ".join([GRAPES.get(grape_id, "N.A.") for grape_id in wine["grapes"]])
@@ -161,12 +161,14 @@ async def parse_pdf(file: UploadFile | None = None):
     if not file.filename.lower().endswith(".pdf"):
          return {"message": "Please upload a PDF file."}
     try:
-        wine_details = await extract_pdf_text(file.file)
-        import time
-        time.sleep(4)
-        # wine_details = await extract_wine_details_from_file(file.file)
-        # wine_details = await get_vivino_data_all(wine_details)
-        # wine_details = update_vivino_ids_to_names(wine_details)
+        # wine_details = await extract_pdf_text(file.file)
+        # import time
+        # time.sleep(4)
+        import logging
+        wine_details = await extract_wine_details_from_file(file.file)
+        logging.info(f"gemini extracted data: {wine_details}")
+        wine_details = await get_vivino_data_all(wine_details)
+        wine_details = update_vivino_ids_to_names(wine_details)
     except Exception as e:
         print(f"Error processing PDF: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing '{file.filename}': {e}")
