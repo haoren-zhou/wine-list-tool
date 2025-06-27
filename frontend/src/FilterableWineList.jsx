@@ -9,12 +9,14 @@ function FilterableWineList ({ initialWinelist })
     maxPrice: 1500,
     typeFilter: "",
     formatFilter: 0,
-    sortBy: "rating_desc"
+    sortBy: "default"
   });
   const [activeIndex, setActiveIndex] = useState(-1); // -1 if no card is open
   
   const wineTypes = [...new Set(initialWinelist.map(wine => wine.type_name))];
-  const wineFormats = [...new Set(initialWinelist.map(wine => wine.volume))];
+  const wineFormats = [...new Set(initialWinelist.map(wine => wine.volume))].sort((a, b) => {
+    return a - b; // sort formats by volume ascending
+  });
 
   const processedWinelist = useMemo(() => {
     let filtered = initialWinelist.filter(wineDetails =>

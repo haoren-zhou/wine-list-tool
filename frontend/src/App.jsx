@@ -13,7 +13,7 @@ export const FileStatus = Object.freeze({
 });
 
 function App() {
-  const [fileStatus, setFileStatus] = useState(FileStatus.SUCCESS);
+  const [fileStatus, setFileStatus] = useState(FileStatus.IDLE);
   // eslint-disable-next-line no-unused-vars
   const [wineList, setWineList] = useState([]);
   const renderContent = () => {
@@ -26,7 +26,7 @@ function App() {
           </>
         )
       case FileStatus.SUCCESS:
-        return <FilterableWineList initialWinelist={WINELIST} />;
+        return <FilterableWineList initialWinelist={wineList} />;
       case FileStatus.ERROR:
         return(
           <>

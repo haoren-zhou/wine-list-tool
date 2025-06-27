@@ -3,16 +3,21 @@ import React from 'react';
 function WineList({ winelist, activeIndex, setActiveIndex }) {
     return (
       <div className='space-y-4'>
-        {winelist.map((wine, index) => {
-          return (
-            <WineCard 
-              wine={wine}
-              isActive={activeIndex === index}
-              onToggle={() => setActiveIndex(activeIndex === index? -1 : index)}
-              key={index}
-            />
-          );
-        })}
+        {winelist.length ?
+            winelist.map((wine, index) => {
+            return (
+                <WineCard 
+                wine={wine}
+                isActive={activeIndex === index}
+                onToggle={() => setActiveIndex(activeIndex === index? -1 : index)}
+                key={index}
+                />
+            );
+            }) : 
+            <div className='flex items-center justify-center text-white'>
+                <p className='font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl'>No Matches Found!</p>
+            </div>
+        }
       </div>
     );
   }

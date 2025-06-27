@@ -27,14 +27,15 @@ function PDFFormSection({setFileStatus, setWineList}) {
         });
         if (response.ok) {
             console.log('File uploaded successfully!');
-            setFileStatus(FileStatus.SUCCESS);
         } else {
             // console.log(`Error: ${result.message}`);
             setFileStatus(FileStatus.ERROR);
+            return;
         }
         const result = await response.json();
         setWineList(result.wine_details);
         console.log(result);
+        setFileStatus(FileStatus.SUCCESS);
         return;
     }
 

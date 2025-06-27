@@ -1,7 +1,7 @@
 import "./LoadingSVG.css";
 function LoadingSVG() {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" shapeRendering="geometricPrecision" textRendering="geometricPrecision" className="align-center mx-auto size-100 md:size-128 lg:size-160">
+        <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" shapeRendering="geometricPrecision" textRendering="geometricPrecision" className="align-center mx-auto size-60 md:size-80 lg:size-100">
             <g transform="translate(0 0.000001)">
                 <g transform="translate(.000002 0.000001)">
                     <path d="M533.515025,795.663053c7.052557,22.34312,20.383758,29.70406,28.916125,35.62196"
