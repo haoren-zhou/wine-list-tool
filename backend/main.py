@@ -59,9 +59,10 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
 
     Do not provide any additional commentary and return only the JSON object. Ensure that every single wine is listed and no page is ignored. Do not include section headers or titles. For wines with multiple formats, return separate objects. Return a list of json objects only.
     '''
+    import io
     uploaded_file = await client.aio.files.upload(
-        file = pdf,
-        config = { "mimeType": "application/pdf" }
+        file = pdf, # type: ignore
+        config = { "mime_type": "application/pdf" }
     )
     response = await client.aio.models.generate_content(
         model = GEMINI_MODEL_ID,
@@ -73,11 +74,13 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
         config = {
             "response_mime_type": "application/json",
             "response_schema": list[WineDetails],
-            "thinkingConfig": {
-                "thinkingBudget": 0
+            "thinking_config": {
+                "thinking_budget": 0
             }
         }
     )
+    if response.text is None:
+        return []
     return json.loads(response.text)
 
 @lru_cache(maxsize = 256)
@@ -145,7 +148,7 @@ def update_vivino_ids_to_names(wine_details: List[Dict]) -> List[Dict]:
         wine["type_name"] = WINE_TYPES.get(wine["type_id"], "N.A.")
         wine["style_name"] = WINE_STYLES.get(wine["style_id"], "N.A.")
         if wine["grapes"]:
-            wine["grapes_name"] = ", ".join([GRAPES.get(grape_id, None) for grape_id in wine["grapes"]])
+            wine["grapes_name"] = ", ".join([GRAPES.get(grape_id, "N.A.") for grape_id in wine["grapes"]])
         else:
             wine["grapes_name"] = "N.A."
         wine["vintage"] = wine["vintage"] or "N.V."
@@ -153,7 +156,7 @@ def update_vivino_ids_to_names(wine_details: List[Dict]) -> List[Dict]:
 
 @app.post("/upload")
 async def parse_pdf(file: UploadFile | None = None):
-    if not file:
+    if not file or file.filename == None:
         return {"message": "No upload file sent."}
     if not file.filename.lower().endswith(".pdf"):
          return {"message": "Please upload a PDF file."}
