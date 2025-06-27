@@ -1,8 +1,0 @@
-fastapi[standard]
-uvicorn[standard]
-python-multipart
-pypdf
-google-genai
-python-dotenv
-pydantic
-requests
