@@ -19,7 +19,7 @@ function Filters ({winelist, minRating, setMinRating, maxPrice, setMaxPrice, set
         </div>
         <div className='col-span-full md:col-span-6'>
             <label className="font-semibold" htmlFor='priceThreshold'>Max. Price ($)</label>
-            <span className='float-right'>{maxPrice == 999999 ? "-" : maxPrice}</span>
+            <span className='float-right'>{maxPrice > 3000 ? "-" : maxPrice}</span>
             <input type="range" min="0" max="3005" defaultValue="1500" step="5" id='priceThreshold' className='w-full' onInput={(e) => {e.target.value == 3005 ? setMaxPrice(999999) : setMaxPrice(e.target.value)}} />
         </div>
         <div className='col-span-full md:col-span-4'>
@@ -58,10 +58,15 @@ function Filters ({winelist, minRating, setMinRating, maxPrice, setMaxPrice, set
   function WineList({ winelist, minRating, maxPrice, typeFilter, formatFilter }) {
     const [activeIndex, setActiveIndex] = useState(-1); // -1 if no card is open
     function checkFilters(wineDetails) {
-      return (typeFilter ? wineDetails.type_name == typeFilter : true) && (formatFilter ? wineDetails.volume == formatFilter : true);
+      return (
+        (wineDetails.rating_average >= minRating) && 
+        (wineDetails.price <= maxPrice) &&
+        (typeFilter ? wineDetails.type_name == typeFilter : true) &&
+        (formatFilter ? wineDetails.volume == formatFilter : true)
+      );
     }
     const filteredWinelist = winelist.filter(
-      wineDetails => wineDetails.rating_average >= minRating && wineDetails.price <= maxPrice && checkFilters(wineDetails)
+      wineDetails => checkFilters(wineDetails)
     );
     return (
       <div className='space-y-4'>

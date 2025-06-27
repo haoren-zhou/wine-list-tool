@@ -14,6 +14,7 @@ export const FileStatus = Object.freeze({
 
 function App() {
   const [fileStatus, setFileStatus] = useState(FileStatus.SUCCESS);
+  // eslint-disable-next-line no-unused-vars
   const [wineList, setWineList] = useState([]);
   const renderContent = () => {
     switch (fileStatus) {
