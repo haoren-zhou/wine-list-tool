@@ -26,7 +26,7 @@ function App() {
           </>
         )
       case FileStatus.SUCCESS:
-        return <FilterableWineList winelist={WINELIST} />;
+        return <FilterableWineList initialWinelist={WINELIST} />;
       case FileStatus.ERROR:
         return(
           <>
