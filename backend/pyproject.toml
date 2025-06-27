@@ -1,6 +1,6 @@
 [project]
 name = "wine-list-tool-backend"
-version = "0.1.0"
+version = "1.0.0"
 description = "FastAPI backend for wine-list-tool"
 readme = "README.md"
 requires-python = ">=3.11"
