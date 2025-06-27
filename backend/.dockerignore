@@ -1,0 +1,4 @@
+.sample_env
+.venv/
+__pycache__
+README.md
