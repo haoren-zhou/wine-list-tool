@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 :root {
   interpolate-size: allow-keywords;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -15,19 +16,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-details {
-  overflow: hidden;
-}
-
-details::details-content {
-  block-size: 0;
-  transition: block-size 0.3s, content-visibility 0.3s;
-  transition-behavior: allow-discrete;
-}
-
-details:open::details-content {
-  block-size: auto;
-}
 /* :root {
   
 }

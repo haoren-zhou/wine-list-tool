@@ -1,4 +1,5 @@
 import React from 'react';
+import './WineList.css'
 
 function WineList({ winelist, activeIndex, setActiveIndex }) {
     return (

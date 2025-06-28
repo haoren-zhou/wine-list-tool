@@ -1,0 +1,15 @@
+details {
+  overflow: hidden;
+}
+
+details::details-content {
+  content-visibility: hidden;
+  block-size: 0;
+  transition: block-size 0.3s, content-visibility 0.3s;
+  transition-behavior: allow-discrete;
+}
+
+details:open::details-content {
+  content-visibility: visible;
+  block-size: auto;
+}
