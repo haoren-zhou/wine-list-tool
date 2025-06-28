@@ -13,7 +13,8 @@ from functools import lru_cache
 app = FastAPI()
 
 origins = [
-    "http://localhost:5173"
+    "http://localhost:5173", # dev
+    "http://localhost:3000", # prod
 ]
 app.add_middleware(
     CORSMiddleware,
