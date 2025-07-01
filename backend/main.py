@@ -5,6 +5,7 @@ from pypdf import PdfReader
 from dotenv import dotenv_values
 import json
 import asyncio
+import os
 from google import genai
 from pydantic import BaseModel
 import requests
@@ -12,10 +13,9 @@ from functools import lru_cache
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:5173", # dev
-    "http://localhost:3000", # prod
-]
+origins_str = os.getenv("FRONTEND_ORIGINS", "http://localhost:5173,http://localhost:3000")
+origins = [o.strip() for o in origins_str.split(',')]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
