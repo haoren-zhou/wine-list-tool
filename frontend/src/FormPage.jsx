@@ -20,8 +20,9 @@ function PDFFormSection({setFileStatus, setWineList}) {
 
         const formData = new FormData();
         formData.append('file', file);
-
-        const response = await fetch('http://localhost:8000/upload', {
+        
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await fetch(`${API_BASE_URL}/upload`, {
             method: 'POST',
             body: formData,
         });
