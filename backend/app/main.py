@@ -32,6 +32,18 @@ def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"message": "health ok"}
 
+def deduplicate_wine_list(wine_details: list[dict]) -> list[dict]:
+    """Deduplicates a list of wine details based on a composite key."""
+    seen = set()
+    deduplicated_list = []
+    for wine in wine_details:
+        # Use a composite key to identify unique wines
+        key = (wine.get("wine_name"), wine.get("vintage"), wine.get("volume"))
+        if key not in seen:
+            seen.add(key)
+            deduplicated_list.append(wine)
+    return deduplicated_list
+
 @app.post("/upload")
 async def parse_pdf(file: UploadFile | None = None):
     if not file or file.filename is None:
@@ -43,6 +55,7 @@ async def parse_pdf(file: UploadFile | None = None):
         wine_details = await extract_wine_details_from_file(io.BytesIO(pdf_contents))
         logging.info(f"gemini extracted data: {wine_details}")
         wine_details = await get_vivino_data_all(wine_details)
+        wine_details = deduplicate_wine_list(wine_details)
         wine_details = update_vivino_ids_to_names(wine_details)
     except Exception as e:
         logging.error(f"Error processing PDF: {e}")
