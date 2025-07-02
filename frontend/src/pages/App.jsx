@@ -1,8 +1,8 @@
 import { useState } from 'react';
-// import './App.css';
-import PDFFormSection from './FormPage';
+import '../styles/App.css';
+import FormPage from './FormPage';
 import FilterableWineList from './FilterableWineList';
-import LoadingSVG from './LoadingSVG';
+import LoadingSVG from '../components/LoadingSVG';
 // import { Routes, Route, Link } from 'react-router-dom';
 
 export const FileStatus = Object.freeze({
@@ -36,7 +36,7 @@ function App() {
         )
       case FileStatus.IDLE:
       default:
-        return <PDFFormSection setFileStatus={setFileStatus} setWineList={setWineList}/>;
+        return <FormPage setFileStatus={setFileStatus} setWineList={setWineList}/>;
     }
   }
   return (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileStatus } from './App';
 
-function PDFFormSection({setFileStatus, setWineList}) {
+function FormPage({setFileStatus, setWineList}) {
     // const [isLoading, setIsLoading] = useState(false);
 
     const handleFileChange = async (event) => {
@@ -64,4 +64,4 @@ function PDFFormSection({setFileStatus, setWineList}) {
     );
 }
 
-export default PDFFormSection;
+export default FormPage;

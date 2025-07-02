@@ -1,4 +1,4 @@
-import "./LoadingSVG.css";
+import "../styles/LoadingSVG.css";
 function LoadingSVG() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" shapeRendering="geometricPrecision" textRendering="geometricPrecision" className="align-center mx-auto size-60 md:size-80 lg:size-100">

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import WineList from './WineList';
-import Filters from './Filters';
+import WineList from '../components/WineList';
+import Filters from '../components/Filters';
 
 function FilterableWineList ({ initialWinelist }) 
 {
