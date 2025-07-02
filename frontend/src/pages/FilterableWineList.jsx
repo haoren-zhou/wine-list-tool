@@ -11,7 +11,7 @@ function FilterableWineList ({ initialWinelist })
     formatFilter: 0,
     sortBy: "default"
   });
-  const [activeIndex, setActiveIndex] = useState(-1); // -1 if no card is open
+  const [activeKey, setActiveKey] = useState('none'); // none if no card is open
   
   const wineTypes = [...new Set(initialWinelist.map(wine => wine.type_name))];
   const wineFormats = [...new Set(initialWinelist.map(wine => wine.volume))].sort((a, b) => {
@@ -48,19 +48,24 @@ function FilterableWineList ({ initialWinelist })
   }, [initialWinelist, filters]);
 
   useEffect(() => {
-    // only reset if an item was actually active, to avoid unnecessary re-renders
-    setActiveIndex(prevActiveIndex => {
-      if (prevActiveIndex !== -1) {
-        return -1; // reset to -1
+    // If there's an active card, check if it's still in the filtered list
+    if (activeKey !== 'none') {
+      const isCardStillVisible = processedWinelist.some(wine => {
+        const key = `${wine.wine_name}-${wine.vintage}-${wine.volume}`;
+        return key === activeKey;
+      });
+
+      // If the active card is no longer visible, close it
+      if (!isCardStillVisible) {
+        setActiveKey('none');
       }
-      return prevActiveIndex;
-    });
-  }, [processedWinelist]);
+    }
+  }, [processedWinelist, activeKey]);
 
   return (
     <div>
       <Filters wineTypes={wineTypes} wineFormats={wineFormats} filters={filters} setFilters={setFilters}/>
-      <WineList winelist={processedWinelist} activeIndex={activeIndex} setActiveIndex={setActiveIndex}/>
+      <WineList winelist={processedWinelist} activeKey={activeKey} setActiveKey={setActiveKey}/>
     </div>
   )
 };

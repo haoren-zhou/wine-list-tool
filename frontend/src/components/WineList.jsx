@@ -1,17 +1,19 @@
 import React from 'react';
 import '../styles/WineList.css'
 
-function WineList({ winelist, activeIndex, setActiveIndex }) {
+function WineList({ winelist, activeKey, setActiveKey }) {
     return (
       <div className='space-y-4'>
         {winelist.length ?
-            winelist.map((wine, index) => {
+            winelist.map((wine) => {
+            const key = `${wine.wine_name}-${wine.vintage}-${wine.volume}`;
+            const isActive = activeKey === key;
             return (
                 <WineCard 
                 wine={wine}
-                isActive={activeIndex === index}
-                onToggle={() => setActiveIndex(activeIndex === index? -1 : index)}
-                key={index}
+                isActive={isActive}
+                onToggle={() => setActiveKey(isActive ? 'none' : key)}
+                key={key}
                 />
             );
             }) : 
