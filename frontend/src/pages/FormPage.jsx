@@ -1,7 +1,9 @@
 import React from 'react';
-import { FileStatus } from './App';
+import { useWineContext } from '../hooks/useWineContext';
+import { FileStatus } from '../utils/constants';
 
-function FormPage({setFileStatus, setWineList}) {
+function FormPage() {
+    const { setFileStatus, setWineList } = useWineContext();
     // const [isLoading, setIsLoading] = useState(false);
 
     const handleFileChange = async (event) => {
