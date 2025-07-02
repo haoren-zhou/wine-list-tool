@@ -4,7 +4,7 @@ services:
     build: ./frontend
     restart: unless-stopped
     volumes:
-      - ./frontend/default.conf:/tmp/default.conf
+      - ./frontend/docker/default.conf:/tmp/default.conf
     environment: 
       - FASTAPI_SERVER_ADDR=backend:8000
     ports:
@@ -33,7 +33,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
-    command: uv run uvicorn main:app --host 0.0.0.0 --port 8000
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
     networks:
       - back-tier
 
