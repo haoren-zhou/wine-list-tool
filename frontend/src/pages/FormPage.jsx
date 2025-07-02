@@ -2,6 +2,8 @@ import React from 'react';
 import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus } from '../utils/constants';
 
+import { uploadFile } from '../services/api';
+
 function FormPage() {
     const { setFileStatus, setWineList } = useWineContext();
     // const [isLoading, setIsLoading] = useState(false);
@@ -18,28 +20,15 @@ function FormPage() {
             return;
         }
         setFileStatus(FileStatus.PROCESSING);
-        console.log(`Uploading file: ${file.name}`);
-
-        const formData = new FormData();
-        formData.append('file', file);
         
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-        const response = await fetch(`${API_BASE_URL}/upload`, {
-            method: 'POST',
-            body: formData,
-        });
-        if (response.ok) {
-            console.log('File uploaded successfully!');
-        } else {
-            // console.log(`Error: ${result.message}`);
+        try {
+            const result = await uploadFile(file);
+            setWineList(result.wine_details);
+            setFileStatus(FileStatus.SUCCESS);
+        } catch (error) {
+            console.error(error);
             setFileStatus(FileStatus.ERROR);
-            return;
         }
-        const result = await response.json();
-        setWineList(result.wine_details);
-        console.log(result);
-        setFileStatus(FileStatus.SUCCESS);
-        return;
     }
 
     return (
