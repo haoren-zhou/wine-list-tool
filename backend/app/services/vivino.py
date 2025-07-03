@@ -1,25 +1,25 @@
 from typing import List, Dict
 import httpx
 from app.core.config import VIVINO_API_URL
+import asyncio
 
-# Get IDs for wine types, styles, and grapes from Vivino API
-# These are cached to avoid repeated API calls
+# Create a single, reusable client to manage the connection pool.
+client = httpx.AsyncClient(follow_redirects=True, headers={"User-agent": "user"})
+
 WINE_TYPES = {1: "Red", 2: "White", 3: "Sparkling", 4: "Rosé", 7: "Dessert", 24: "Fortified"}
 
-async def get_wine_styles():
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get("https://vivino.com/api/wine_styles", headers={"User-agent": "user"})
-        response.raise_for_status()
-        return {s["id"]: s["name"] for s in response.json()["wine_styles"]}
+# API Functions to be executed once
+async def get_wine_styles() -> Dict[int, str]:
+    """Fetches all wine styles id -> name mappings from the Vivino API."""
+    response = await client.get("https://www.vivino.com/api/wine_styles")
+    response.raise_for_status()
+    return {s["id"]: s["name"] for s in response.json()["wine_styles"]}
 
-async def get_grapes():
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get("https://vivino.com/api/grapes", headers={"User-agent": "user"})
-        response.raise_for_status()
-        return {g["id"]: g["name"] for g in response.json()["grapes"]}
-
-WINE_STYLES = {}
-GRAPES = {}
+async def get_grapes() -> Dict[int, str]:
+    """Fetches all grape types id -> name mappings from the Vivino API."""
+    response = await client.get("https://www.vivino.com/api/grapes")
+    response.raise_for_status()
+    return {g["id"]: g["name"] for g in response.json()["grapes"]}
 
 async def get_vivino_data(wine_name: str, vintage: int | None) -> Dict | None:
     '''Queries Vivino's public Algolia API for wine data.
@@ -34,11 +34,11 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> Dict | None:
     vintage_str = str(vintage) if vintage else ""
     wine_name_full = f"{wine_name} {vintage_str}" if vintage else wine_name
     headers = {
-        "User-Agent": "user",
         "x-algolia-api-key": "60c11b2f1068885161d95ca068d3a6ae",
         "x-algolia-application-id": "9TAKGWJUXL",
     }
-    async with httpx.AsyncClient() as client:
+    
+    try:
         response = await client.post(
             VIVINO_API_URL,
             json={
@@ -46,12 +46,14 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> Dict | None:
             },
             headers=headers
         )
-    if response.status_code != 200:
-        print(f"Vivino API Error: {response.status_code} - {response.text}")
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        print(f"Vivino API Error: {e.response.status_code} - {e.response.text}")
         return None
     results = response.json()
     if results["nbHits"] == 0:
         return None
+
     top_result = results["hits"][0]
     for vintage_details in top_result["vintages"]:
         if vintage_details["year"] == vintage_str:
@@ -69,24 +71,38 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> Dict | None:
     return None
 
 async def get_vivino_data_all(wine_details: List[Dict]) -> List[Dict]:
-    '''Gets Vivino data for all wines in the list. Removes wines that are not found in Vivino or do not have sufficient reviews for a rating.
-    '''
+    """Gets Vivino data for all wines in a list concurrently.
+    Removes wines that are not found in Vivino or do not have sufficient
+    reviews for a rating.
+
+    Args:
+        wine_details: A list of wine dictionaries to be enriched.
+
+    Returns:
+        A new list of wine dictionaries, enriched with Vivino data.
+    """
+    tasks = [get_vivino_data(wine["wine_name"], wine.get("vintage")) for wine in wine_details]
+    results = await asyncio.gather(*tasks)
+    
     updated_wine_details = []
-    for wine in wine_details:
-        vivino_data = await get_vivino_data(wine["wine_name"], wine["vintage"])
+    for original_wine, vivino_data in zip(wine_details, results):
         if vivino_data:
-            vivino_data.update(wine)
+            vivino_data.update(original_wine)
             updated_wine_details.append(vivino_data)
     return updated_wine_details
 
-def update_vivino_ids_to_names(wine_details: List[Dict]) -> List[Dict]:
+def update_vivino_ids_to_names(
+    wine_details: List[Dict],
+    grapes_map: Dict[int, str], 
+    styles_map: Dict[int, str]
+) -> List[Dict]:
     '''Updates the Vivino IDs to names in the wine details list. Additionally, sets wine vintage to "N.V." for non-vintage wines.
     '''
     for wine in wine_details:
         wine["type_name"] = WINE_TYPES.get(wine["type_id"], "Other")
-        wine["style_name"] = WINE_STYLES.get(wine["style_id"], "N.A.")
+        wine["style_name"] = styles_map.get(wine["style_id"], "N.A.")
         if wine["grapes"]:
-            wine["grapes_name"] = ", ".join([GRAPES.get(grape_id, "N.A.") for grape_id in wine["grapes"]])
+            wine["grapes_name"] = ", ".join([grapes_map.get(grape_id, "N.A.") for grape_id in wine["grapes"]])
         else:
             wine["grapes_name"] = "N.A."
         wine["vintage"] = wine["vintage"] or "N.V."

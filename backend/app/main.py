@@ -3,6 +3,7 @@ from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import io
+logging.basicConfig(level=logging.INFO)
 
 from contextlib import asynccontextmanager
 from app.core.config import FRONTEND_ORIGINS
@@ -21,6 +22,8 @@ async def lifespan(app: FastAPI):
     """
     app.state.grapes = await get_grapes()
     app.state.wine_styles = await get_wine_styles()
+    logging.info(app.state.grapes)
+    logging.info(app.state.wine_styles)
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -95,7 +98,11 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
         logging.info(f"gemini extracted data: {wine_details}")
         wine_details = await get_vivino_data_all(wine_details)
         wine_details = deduplicate_wine_list(wine_details)
-        wine_details = update_vivino_ids_to_names(wine_details)
+        wine_details = update_vivino_ids_to_names(
+            wine_details=wine_details,
+            grapes_map=app.state.grapes,
+            styles_map=app.state.wine_styles
+        )
     except Exception as e:
         logging.error(f"Error processing PDF: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing '{file.filename}': {e}")
