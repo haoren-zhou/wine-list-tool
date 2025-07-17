@@ -3,12 +3,15 @@ from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import io
-logging.basicConfig(level=logging.INFO)
 
 from contextlib import asynccontextmanager
-from app.core.config import FRONTEND_ORIGINS
+from app.core.config import FRONTEND_ORIGINS, setup_logging, LOG_LEVEL
 from app.services.gemini import extract_wine_details_from_file
 from app.services.vivino import get_vivino_data_all, update_vivino_ids_to_names, get_grapes, get_wine_styles
+
+logging.basicConfig(level=LOG_LEVEL)
+setup_logging("./logging_config.json")
+logger = logging.getLogger("backend.app")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,8 +25,8 @@ async def lifespan(app: FastAPI):
     """
     app.state.grapes = await get_grapes()
     app.state.wine_styles = await get_wine_styles()
-    logging.info(app.state.grapes)
-    logging.info(app.state.wine_styles)
+    logger.info(f"Loaded grape ID mapping, size: {len(app.state.grapes)}")
+    logger.info(f"Loaded wine style ID mapping, size: {len(app.state.wine_styles)}")
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -95,7 +98,7 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
     try:
         pdf_contents = await file.read()
         wine_details = await extract_wine_details_from_file(io.BytesIO(pdf_contents))
-        logging.info(f"gemini extracted data: {wine_details}")
+        logger.info(f"gemini extracted data: {wine_details}")
         wine_details = await get_vivino_data_all(wine_details)
         wine_details = deduplicate_wine_list(wine_details)
         wine_details = update_vivino_ids_to_names(
@@ -104,6 +107,6 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
             styles_map=app.state.wine_styles
         )
     except Exception as e:
-        logging.error(f"Error processing PDF: {e}")
+        logger.error(f"Error processing PDF: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing '{file.filename}': {e}")
     return {"filename": file.filename, "wine_details": wine_details}

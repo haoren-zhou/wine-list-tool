@@ -1,5 +1,5 @@
-
 import os
+import json
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -12,3 +12,20 @@ MOCK_GEMINI_RESPONSE = os.getenv("MOCK_GEMINI_RESPONSE", "false").lower() in ("t
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY must be set in the environment variables or .env file")
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+
+def setup_logging(config_file_path: str):
+    import logging.config
+    import logging.handlers
+    import atexit
+
+    with open(config_file_path, 'r') as logging_config:
+        config = json.load(logging_config)
+
+    logging.config.dictConfig(config)
+
+    queue_handler = logging.getHandlerByName("queue_handler")
+    if queue_handler is not None:
+        queue_handler.listener.start() # type: ignore
+        atexit.register(queue_handler.listener.stop) # type: ignore
