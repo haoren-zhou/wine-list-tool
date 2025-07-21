@@ -2,15 +2,20 @@
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+import os
 import io
 
 from contextlib import asynccontextmanager
-from app.core.config import FRONTEND_ORIGINS, setup_logging, LOG_LEVEL
+from app.core.config import FRONTEND_ORIGINS
+from app.core.logging import setup_logging
 from app.services.gemini import extract_wine_details_from_file
 from app.services.vivino import get_vivino_data_all, update_vivino_ids_to_names, get_grapes, get_wine_styles
 
-logging.basicConfig(level=LOG_LEVEL)
-setup_logging("./logging_config.json")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_root = os.path.dirname(current_dir)
+LOGGING_CONFIG_PATH = os.path.join(backend_root, 'config', 'logging_config.json')
+
+setup_logging(LOGGING_CONFIG_PATH)
 logger = logging.getLogger("backend.app")
 
 @asynccontextmanager
