@@ -5,7 +5,7 @@ import App from './pages/App.jsx';
 import { BrowserRouter } from 'react-router';
 import WineContextProvider from './contexts/WineContextProvider';
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <WineContextProvider>
