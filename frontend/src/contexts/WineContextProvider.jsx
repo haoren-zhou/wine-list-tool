@@ -7,7 +7,9 @@ function WineContextProvider({ children }) {
   const [wineList, setWineList] = useState([]);
 
   return (
-    <WineContext.Provider value={{ fileStatus, setFileStatus, wineList, setWineList }}>
+    <WineContext.Provider
+      value={{ fileStatus, setFileStatus, wineList, setWineList }}
+    >
       {children}
     </WineContext.Provider>
   );

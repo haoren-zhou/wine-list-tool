@@ -34,16 +34,15 @@ function WineCard({ wine, isActive, onToggle }) {
   useEffect(() => {
     // Set the height of the content for the animation
     if (contentRef.current) {
-      setContentHeight(isActive ? `${contentRef.current.scrollHeight}px` : '0px');
+      setContentHeight(
+        isActive ? `${contentRef.current.scrollHeight}px` : '0px',
+      );
     }
   }, [isActive]);
 
   return (
     <div className="bg-gray-700 rounded-md overflow-hidden">
-      <div
-        className="p-4 cursor-pointer"
-        onClick={onToggle}
-      >
+      <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between text-white">
           <div className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
             {wine.vivino_match}
@@ -56,7 +55,10 @@ function WineCard({ wine, isActive, onToggle }) {
       </div>
       <div
         ref={contentRef}
-        style={{ maxHeight: `${contentHeight}`, transition: 'max-height 0.3s ease-in-out' }}
+        style={{
+          maxHeight: `${contentHeight}`,
+          transition: 'max-height 0.3s ease-in-out',
+        }}
         className="overflow-hidden"
       >
         <div className="p-4 bg-gray-600 text-gray-200 text-xs md:text-sm xl:text-base 2xl:text-lg">

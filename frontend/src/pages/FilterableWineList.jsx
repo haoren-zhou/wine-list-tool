@@ -2,28 +2,34 @@ import React, { useState, useMemo, useEffect } from 'react';
 import WineList from '../components/WineList';
 import Filters from '../components/Filters';
 
-function FilterableWineList ({ initialWinelist }) 
-{
+function FilterableWineList({ initialWinelist }) {
   const [filters, setFilters] = useState({
     minRating: 4.0,
     maxPrice: 1500,
-    typeFilter: "",
+    typeFilter: '',
     formatFilter: 0,
-    sortBy: "default"
+    sortBy: 'default',
   });
   const [activeKey, setActiveKey] = useState('none'); // none if no card is open
-  
-  const wineTypes = [...new Set(initialWinelist.map(wine => wine.type_name))];
-  const wineFormats = [...new Set(initialWinelist.map(wine => wine.volume))].sort((a, b) => {
+
+  const wineTypes = [...new Set(initialWinelist.map((wine) => wine.type_name))];
+  const wineFormats = [
+    ...new Set(initialWinelist.map((wine) => wine.volume)),
+  ].sort((a, b) => {
     return a - b; // sort formats by volume ascending
   });
 
   const processedWinelist = useMemo(() => {
-    let filtered = initialWinelist.filter(wineDetails =>
-      (wineDetails.rating_average >= filters.minRating) &&
-      (wineDetails.price <= filters.maxPrice) &&
-      (filters.typeFilter ? wineDetails.type_name === filters.typeFilter : true) &&
-      (filters.formatFilter ? wineDetails.volume === filters.formatFilter : true)
+    let filtered = initialWinelist.filter(
+      (wineDetails) =>
+        wineDetails.rating_average >= filters.minRating &&
+        wineDetails.price <= filters.maxPrice &&
+        (filters.typeFilter
+          ? wineDetails.type_name === filters.typeFilter
+          : true) &&
+        (filters.formatFilter
+          ? wineDetails.volume === filters.formatFilter
+          : true),
     );
 
     // Apply sorting
@@ -50,7 +56,7 @@ function FilterableWineList ({ initialWinelist })
   useEffect(() => {
     // If there's an active card, check if it's still in the filtered list
     if (activeKey !== 'none') {
-      const isCardStillVisible = processedWinelist.some(wine => {
+      const isCardStillVisible = processedWinelist.some((wine) => {
         const key = `${wine.wine_name}-${wine.vintage}-${wine.volume}`;
         return key === activeKey;
       });
@@ -64,10 +70,19 @@ function FilterableWineList ({ initialWinelist })
 
   return (
     <div>
-      <Filters wineTypes={wineTypes} wineFormats={wineFormats} filters={filters} setFilters={setFilters}/>
-      <WineList winelist={processedWinelist} activeKey={activeKey} setActiveKey={setActiveKey}/>
+      <Filters
+        wineTypes={wineTypes}
+        wineFormats={wineFormats}
+        filters={filters}
+        setFilters={setFilters}
+      />
+      <WineList
+        winelist={processedWinelist}
+        activeKey={activeKey}
+        setActiveKey={setActiveKey}
+      />
     </div>
-  )
-};
+  );
+}
 
 export default FilterableWineList;

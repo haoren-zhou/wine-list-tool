@@ -19,7 +19,7 @@ export async function uploadFile(file) {
 
     return await response.json();
   } catch (error) {
-    console.error("Error in uploadFile service:", error);
+    console.error('Error in uploadFile service:', error);
     // Re-throw the error so the component can handle it
     throw error;
   }
