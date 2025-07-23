@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -9,14 +8,20 @@ from contextlib import asynccontextmanager
 from app.core.config import FRONTEND_ORIGINS
 from app.core.logging import setup_logging
 from app.services.gemini import extract_wine_details_from_file
-from app.services.vivino import get_vivino_data_all, update_vivino_ids_to_names, get_grapes, get_wine_styles
+from app.services.vivino import (
+    get_vivino_data_all,
+    update_vivino_ids_to_names,
+    get_grapes,
+    get_wine_styles,
+)
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_root = os.path.dirname(current_dir)
-LOGGING_CONFIG_PATH = os.path.join(backend_root, 'config', 'logging_config.json')
+LOGGING_CONFIG_PATH = os.path.join(backend_root, "config", "logging_config.json")
 
 setup_logging(LOGGING_CONFIG_PATH)
 logger = logging.getLogger("backend.app")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,9 +39,10 @@ async def lifespan(app: FastAPI):
     logger.info(f"Loaded wine style ID mapping, size: {len(app.state.wine_styles)}")
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
-origins = [o.strip() for o in FRONTEND_ORIGINS.split(',')]
+origins = [o.strip() for o in FRONTEND_ORIGINS.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,10 +52,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"message": "health ok"}
+
 
 def deduplicate_wine_list(wine_details: list[dict]) -> list[dict]:
     """Deduplicates a list of wine details based on a composite key.
@@ -74,6 +82,7 @@ def deduplicate_wine_list(wine_details: list[dict]) -> list[dict]:
             seen.add(key)
             deduplicated_list.append(wine)
     return deduplicated_list
+
 
 @app.post("/upload")
 async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
@@ -109,9 +118,11 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
         wine_details = update_vivino_ids_to_names(
             wine_details=wine_details,
             grapes_map=app.state.grapes,
-            styles_map=app.state.wine_styles
+            styles_map=app.state.wine_styles,
         )
     except Exception as e:
         logger.error(f"Error processing PDF: {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing '{file.filename}': {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing '{file.filename}': {e}"
+        )
     return {"filename": file.filename, "wine_details": wine_details}

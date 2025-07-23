@@ -7,11 +7,11 @@ from app.core.schemas import WineDetails
 # Configure the Gemini Client
 client = genai.Client(api_key=GEMINI_API_KEY)
 
+
 async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
-    '''Extracts wine details from a PDF file using the Gemini API.
-    '''
+    """Extracts wine details from a PDF file using the Gemini API."""
     if MOCK_GEMINI_RESPONSE:
-        return json.loads('''
+        return json.loads("""
 [
     {
         "wine_name": "Château Margaux",
@@ -32,8 +32,8 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
         "volume": 750
     }
 ]
-''')
-    prompt = '''This is a wine list of a restaurant.
+""")
+    prompt = """This is a wine list of a restaurant.
     Output a JSON of all the wines in the wine list only. Ignore all non-wine beverages, house wines or any other non-specific wine names.
     The JSON should have the following keys:
 
@@ -43,25 +43,19 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
     4. "volume": The volume of the wine in mililitres as an integer. You may have to infer the volume (bottles are generally 750ml, a glass is generally 150/125ml). If unclear, return 750.
 
     Do not provide any additional commentary and return only the JSON object. Ensure that every single wine is listed and no page is ignored. Do not include section headers or titles. For wines with multiple formats, return separate objects. Return a list of json objects only.
-    '''
+    """
     uploaded_file = await client.aio.files.upload(
         file=pdf,  # type: ignore
-        config={"mime_type": "application/pdf"}
+        config={"mime_type": "application/pdf"},
     )
     response = await client.aio.models.generate_content(
         model=GEMINI_MODEL_ID,
-        contents=[
-            uploaded_file,
-            "\n\n",
-            prompt
-        ],
+        contents=[uploaded_file, "\n\n", prompt],
         config={
             "response_mime_type": "application/json",
             "response_schema": list[WineDetails],
-            "thinking_config": {
-                "thinking_budget": 0
-            }
-        }
+            "thinking_config": {"thinking_budget": 0},
+        },
     )
     if response.text is None:
         return []
