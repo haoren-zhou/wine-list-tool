@@ -43,9 +43,7 @@ function App() {
       <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 mx-auto">
         {renderContent()}
       </main>
-      <footer>
-        <p>----footer text----</p>
-      </footer>
+      <footer>{/* <p>----footer text----</p> */}</footer>
     </>
   );
 }
