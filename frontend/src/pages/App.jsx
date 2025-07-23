@@ -36,7 +36,7 @@ function App() {
       <header className='flex bg-gray-800 place-content-center items-center h-16 md:h-20 lg:h-24 xl:h-28'>
         <h1 className='text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r to-white from-yellow-100'>Wine List Tool</h1>
       </header>
-      <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 place-self-center">
+      <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 mx-auto">
         {renderContent()}
       </main>
       <footer>
