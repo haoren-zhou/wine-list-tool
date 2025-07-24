@@ -7,7 +7,9 @@ function FormPage() {
   const { setFileStatus, setWineList } = useWineContext();
   // const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
