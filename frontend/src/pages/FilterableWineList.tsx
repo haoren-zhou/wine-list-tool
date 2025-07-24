@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import WineList from '../components/WineList';
 import Filters from '../components/Filters';
+import Pagination from '../components/Pagination';
 import type { Wine } from '../types';
 import type { FilterOptions } from '../components/Filters';
 
@@ -17,6 +18,10 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
     sortBy: 'default',
   });
   const [activeKey, setActiveKey] = useState<string>('none'); // none if no card is open
+
+  // pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const wineTypes: string[] = [
     ...new Set(initialWinelist.map((wine) => wine.type_name)),
@@ -61,10 +66,24 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
     return filtered;
   }, [initialWinelist, filters]);
 
+  // pagination logic
+  const totalPages = Math.ceil(processedWinelist.length / itemsPerPage);
+  const paginatedWinelist = useMemo(() => {
+    return processedWinelist.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage,
+    );
+  }, [processedWinelist, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    // Reset to page 1 whenever filters change
+    setCurrentPage(1);
+  }, [filters]);
+
   useEffect(() => {
     // If there's an active card, check if it's still in the filtered list
     if (activeKey !== 'none') {
-      const isCardStillVisible = processedWinelist.some((wine) => {
+      const isCardStillVisible = paginatedWinelist.some((wine) => {
         const key = `${wine.wine_name}-${wine.vintage}-${wine.volume}`;
         return key === activeKey;
       });
@@ -74,7 +93,7 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
         setActiveKey('none');
       }
     }
-  }, [processedWinelist, activeKey]);
+  }, [paginatedWinelist, activeKey]);
 
   return (
     <div>
@@ -85,9 +104,14 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
         setFilters={setFilters}
       />
       <WineList
-        winelist={processedWinelist}
+        winelist={paginatedWinelist}
         activeKey={activeKey}
         setActiveKey={setActiveKey}
+      />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
     </div>
   );
