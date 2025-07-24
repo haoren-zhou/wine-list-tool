@@ -1,6 +1,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export async function uploadFile(file) {
+export async function uploadFile(file: File): Promise<any> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -19,7 +19,7 @@ export async function uploadFile(file) {
 
     return await response.json();
   } catch (error) {
-    console.error("Error in uploadFile service:", error);
+    console.error('Error in uploadFile service:', error);
     // Re-throw the error so the component can handle it
     throw error;
   }
