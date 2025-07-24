@@ -1,4 +1,3 @@
-import React from 'react';
 import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus } from '../utils/constants';
 
@@ -8,8 +7,8 @@ function FormPage() {
   const { setFileStatus, setWineList } = useWineContext();
   // const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0];
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
       alert('Please upload a PDF file.');

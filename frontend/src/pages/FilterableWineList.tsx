@@ -1,25 +1,33 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import WineList from '../components/WineList';
 import Filters from '../components/Filters';
+import type { Wine } from '../types';
+import type { FilterOptions } from '../components/Filters';
 
-function FilterableWineList({ initialWinelist }) {
-  const [filters, setFilters] = useState({
+interface FilterableWineListProps {
+  initialWinelist: Wine[];
+}
+
+function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
+  const [filters, setFilters] = useState<FilterOptions>({
     minRating: 4.0,
     maxPrice: 1500,
     typeFilter: '',
     formatFilter: 0,
     sortBy: 'default',
   });
-  const [activeKey, setActiveKey] = useState('none'); // none if no card is open
+  const [activeKey, setActiveKey] = useState<string>('none'); // none if no card is open
 
-  const wineTypes = [...new Set(initialWinelist.map((wine) => wine.type_name))];
-  const wineFormats = [
+  const wineTypes: string[] = [
+    ...new Set(initialWinelist.map((wine) => wine.type_name)),
+  ];
+  const wineFormats: number[] = [
     ...new Set(initialWinelist.map((wine) => wine.volume)),
   ].sort((a, b) => {
     return a - b; // sort formats by volume ascending
   });
 
-  const processedWinelist = useMemo(() => {
+  const processedWinelist: Wine[] = useMemo(() => {
     let filtered = initialWinelist.filter(
       (wineDetails) =>
         wineDetails.rating_average >= filters.minRating &&
