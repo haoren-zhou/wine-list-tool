@@ -110,6 +110,7 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF file.")
     try:
+        logger.info(f"Processing file: {file.filename}")
         pdf_contents = await file.read()
         wine_details = await extract_wine_details_from_file(io.BytesIO(pdf_contents))
         logger.info(f"gemini extracted data: {wine_details}")
@@ -125,4 +126,6 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
         raise HTTPException(
             status_code=500, detail=f"Error processing '{file.filename}': {e}"
         )
+    logger.info(f"Processed {len(wine_details)} wines from {file.filename}")
+    logger.debug(f"Wine details: {wine_details}")
     return {"filename": file.filename, "wine_details": wine_details}
