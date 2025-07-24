@@ -67,7 +67,7 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
         config={
             "response_mime_type": "application/json",
             "response_schema": list[WineDetails],
-            "temperature": 0.,
+            "temperature": 0.0,
             "seed": 42,
             "thinking_config": {"thinking_budget": 0},
         },
