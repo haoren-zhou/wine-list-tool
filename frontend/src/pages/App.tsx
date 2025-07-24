@@ -1,6 +1,5 @@
 import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus } from '../utils/constants';
-import '../styles/App.css';
 import FormPage from './FormPage';
 import FilterableWineList from './FilterableWineList';
 import LoadingSVG from '../components/LoadingSVG';
