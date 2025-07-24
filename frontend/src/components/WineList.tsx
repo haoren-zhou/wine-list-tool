@@ -1,6 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import type { Wine } from '../types';
 
-function WineList({ winelist, activeKey, setActiveKey }) {
+interface WineListProps {
+  winelist: Wine[];
+  activeKey: string;
+  setActiveKey: Dispatch<SetStateAction<string>>;
+}
+
+function WineList({ winelist, activeKey, setActiveKey }: WineListProps) {
   return (
     <div className="space-y-4">
       {winelist.length ? (
@@ -27,8 +35,14 @@ function WineList({ winelist, activeKey, setActiveKey }) {
   );
 }
 
-function WineCard({ wine, isActive, onToggle }) {
-  const contentRef = useRef(null);
+interface WineCardProps {
+  wine: Wine;
+  isActive: boolean;
+  onToggle: () => void;
+}
+
+function WineCard({ wine, isActive, onToggle }: WineCardProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState('0px');
 
   useEffect(() => {

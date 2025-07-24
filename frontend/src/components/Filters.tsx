@@ -1,40 +1,60 @@
 import React from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
-function Filters({ wineTypes, wineFormats, filters, setFilters }) {
-  // TODO: implement filters
-  // 1. Filter by rating (minimum rating) -> useState (min_rating float) ratingThreshold
-  // 2. Filter by price (maximum price) -> useState (max_price int) priceThreshold
-  // 3. select by wine type -> useState (All, ...types) typeFilter
-  // 4. Filter by format (750ml, 150ml, etc.) -> useState (All, ...formats) formatFilter
-  // 5. Sort by (rating, price) sortBy -> priceAsc, priceDesc, ratingAsc, ratingDesc
+export interface FilterOptions {
+  minRating: number;
+  maxPrice: number;
+  typeFilter: string;
+  formatFilter: number;
+  sortBy: string;
+}
 
-  const handleMinRatingChange = (e) => {
+interface FiltersProps {
+  wineTypes: string[];
+  wineFormats: number[];
+  filters: FilterOptions;
+  setFilters: Dispatch<SetStateAction<FilterOptions>>;
+}
+
+function Filters({
+  wineTypes,
+  wineFormats,
+  filters,
+  setFilters,
+}: FiltersProps) {
+  const handleMinRatingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       minRating: parseFloat(e.target.value),
     }));
   };
-  const handleMaxPriceChange = (e) => {
-    var newMaxPrice = parseFloat(e.target.value);
-    newMaxPrice = newMaxPrice == 3005 ? Infinity : newMaxPrice;
+
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let newMaxPrice = parseFloat(e.target.value);
+    newMaxPrice = newMaxPrice === 3005 ? Infinity : newMaxPrice;
     setFilters((prevFilters) => ({
       ...prevFilters,
       maxPrice: newMaxPrice,
     }));
   };
-  const handleTypeFilterChange = (e) => {
+
+  const handleTypeFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       typeFilter: e.target.value,
     }));
   };
-  const handleFormatFilterChange = (e) => {
+
+  const handleFormatFilterChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       formatFilter: parseFloat(e.target.value),
     }));
   };
-  const handleSortByChange = (e) => {
+
+  const handleSortByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       sortBy: e.target.value,
