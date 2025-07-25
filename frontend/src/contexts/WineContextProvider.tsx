@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { WineContext } from './WineContext';
+import { useState } from 'react';
 import type { Wine } from '../types';
 import { FileStatus } from '../utils/constants';
+import { WineContext } from './WineContext';
 
 interface WineContextProviderProps {
   children: ReactNode;

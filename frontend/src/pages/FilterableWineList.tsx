@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
-import WineList from '../components/WineList';
+import { useEffect, useMemo, useState } from 'react';
+import type { FilterOptions } from '../components/Filters';
 import Filters from '../components/Filters';
 import Pagination from '../components/Pagination';
+import WineList from '../components/WineList';
 import type { Wine } from '../types';
-import type { FilterOptions } from '../components/Filters';
 
 interface FilterableWineListProps {
   initialWinelist: Wine[];
