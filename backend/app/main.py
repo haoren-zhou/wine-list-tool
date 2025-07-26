@@ -5,7 +5,7 @@ import os
 import io
 
 from contextlib import asynccontextmanager
-from app.core.config import FRONTEND_ORIGINS
+from app.core.config import FRONTEND_ORIGINS, SORENSEN_DICE_N
 from app.core.logging import setup_logging
 from app.services.gemini import extract_wine_details_from_file
 from app.services.vivino import (
@@ -14,6 +14,7 @@ from app.services.vivino import (
     get_grapes,
     get_wine_styles,
 )
+from app.services.similarity import update_wine_similarity
 from app.core.schemas import WineDetails
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -123,6 +124,7 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
             grapes_map=app.state.grapes,
             styles_map=app.state.wine_styles,
         )
+        wine_details = update_wine_similarity(wine_details, n=SORENSEN_DICE_N)
 
     except Exception as e:
         logger.error(f"Error processing PDF: {e}")

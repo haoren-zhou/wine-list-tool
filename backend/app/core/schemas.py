@@ -24,3 +24,4 @@ class WineDetails(WineDetailsBase):
     type_name: str = ""
     style_name: str = ""
     grapes_name: str = ""
+    match_coefficient: float = 0.0

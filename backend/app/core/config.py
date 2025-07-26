@@ -15,6 +15,7 @@ MOCK_GEMINI_RESPONSE = os.getenv("MOCK_GEMINI_RESPONSE", "false").lower() in (
     "t",
 )
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
+SORENSEN_DICE_N = int(os.getenv("SORENSEN_DICE_N", 2))
 
 if not GEMINI_API_KEY:
     raise ValueError(
