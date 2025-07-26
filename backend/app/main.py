@@ -14,6 +14,7 @@ from app.services.vivino import (
     get_grapes,
     get_wine_styles,
 )
+from app.core.schemas import WineDetails
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_root = os.path.dirname(current_dir)
@@ -59,7 +60,7 @@ def health() -> dict[str, str]:
     return {"message": "health ok"}
 
 
-def deduplicate_wine_list(wine_details: list[dict]) -> list[dict]:
+def deduplicate_wine_list(wine_details: list[WineDetails]) -> list[WineDetails]:
     """Deduplicates a list of wine details based on a composite key.
 
     This function iterates through a list of wine dictionaries and removes
@@ -77,15 +78,15 @@ def deduplicate_wine_list(wine_details: list[dict]) -> list[dict]:
     deduplicated_list = []
     for wine in wine_details:
         # Use a composite key to identify unique wines
-        key = (wine.get("wine_name"), wine.get("vintage"), wine.get("volume"))
+        key = (wine.wine_name, wine.vintage, wine.volume)
         if key not in seen:
             seen.add(key)
             deduplicated_list.append(wine)
     return deduplicated_list
 
 
-@app.post("/upload")
-async def parse_pdf(file: UploadFile | None = None) -> list:
+@app.post("/upload", response_model=list[WineDetails])
+async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
     """Parses an uploaded PDF file to extract, enrich, and return wine details.
 
     This endpoint accepts a PDF file, extracts wine names using the Gemini API,
@@ -109,6 +110,7 @@ async def parse_pdf(file: UploadFile | None = None) -> list:
         raise HTTPException(status_code=400, detail="No upload file sent.")
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF file.")
+
     try:
         logger.info(f"Processing file: {file.filename}")
         pdf_contents = await file.read()
@@ -121,11 +123,14 @@ async def parse_pdf(file: UploadFile | None = None) -> list:
             grapes_map=app.state.grapes,
             styles_map=app.state.wine_styles,
         )
+
     except Exception as e:
         logger.error(f"Error processing PDF: {e}")
         raise HTTPException(
             status_code=500, detail=f"Error processing '{file.filename}': {e}"
         )
+
     logger.info(f"Processed {len(wine_details)} wines from {file.filename}")
     logger.debug(f"Wine details: {wine_details}")
+
     return wine_details

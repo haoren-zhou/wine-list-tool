@@ -2,7 +2,7 @@ from typing import BinaryIO
 import json
 from google import genai
 from app.core.config import GEMINI_API_KEY, GEMINI_MODEL_ID, MOCK_GEMINI_RESPONSE
-from app.core.schemas import WineDetails
+from app.core.schemas import WineDetailsBase
 
 # Configure the Gemini Client
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -66,7 +66,7 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
         contents=[uploaded_file, "\n\n", prompt],
         config={
             "response_mime_type": "application/json",
-            "response_schema": list[WineDetails],
+            "response_schema": list[WineDetailsBase],
             "temperature": 0.0,
             "seed": 42,
             "thinking_config": {"thinking_budget": 0},
