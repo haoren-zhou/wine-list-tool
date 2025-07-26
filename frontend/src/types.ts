@@ -5,15 +5,16 @@ export interface Wine {
   vivino_match: string;
   rating_average: number;
   rating_count: number;
-  type_id: number;
-  style_id: number;
-  grapes: number[];
   vintage: number;
   price: number;
   volume: number;
+  type_id: number;
+  style_id: number;
+  grapes: number[];
   type_name: string;
   style_name: string;
   grapes_name: string;
+  match_coefficient: number;
 }
 
 export interface WineContextType {
