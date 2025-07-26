@@ -1,4 +1,3 @@
-from typing import List, Dict
 import httpx
 from app.core.config import VIVINO_API_URL
 import asyncio
@@ -17,21 +16,21 @@ WINE_TYPES = {
 
 
 # API Functions to be executed once
-async def get_wine_styles() -> Dict[int, str]:
+async def get_wine_styles() -> dict[int, str]:
     """Fetches all wine styles id -> name mappings from the Vivino API."""
     response = await client.get("https://www.vivino.com/api/wine_styles")
     response.raise_for_status()
     return {s["id"]: s["name"] for s in response.json()["wine_styles"]}
 
 
-async def get_grapes() -> Dict[int, str]:
+async def get_grapes() -> dict[int, str]:
     """Fetches all grape types id -> name mappings from the Vivino API."""
     response = await client.get("https://www.vivino.com/api/grapes")
     response.raise_for_status()
     return {g["id"]: g["name"] for g in response.json()["grapes"]}
 
 
-async def get_vivino_data(wine_name: str, vintage: int | None) -> Dict | None:
+async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
     """Queries Vivino's public Algolia API for wine data.
     Returns JSON data for the wine if found, otherwise returns None.
         "vivino_match": Name of the wine as found in Vivino
@@ -83,7 +82,7 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> Dict | None:
     return None
 
 
-async def get_vivino_data_all(wine_details: List[Dict]) -> List[Dict]:
+async def get_vivino_data_all(wine_details: list[dict]) -> list[dict]:
     """Gets Vivino data for all wines in a list concurrently.
     Removes wines that are not found in Vivino or do not have sufficient
     reviews for a rating.
@@ -108,8 +107,8 @@ async def get_vivino_data_all(wine_details: List[Dict]) -> List[Dict]:
 
 
 def update_vivino_ids_to_names(
-    wine_details: List[Dict], grapes_map: Dict[int, str], styles_map: Dict[int, str]
-) -> List[Dict]:
+    wine_details: list[dict], grapes_map: dict[int, str], styles_map: dict[int, str]
+) -> list[dict]:
     """Updates the Vivino IDs to names in the wine details list. Additionally, sets wine vintage to "N.V." for non-vintage wines."""
     for wine in wine_details:
         wine["type_name"] = WINE_TYPES.get(wine["type_id"], "Other")

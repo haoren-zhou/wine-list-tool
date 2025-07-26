@@ -1,4 +1,4 @@
-from typing import BinaryIO, List, Dict
+from typing import BinaryIO
 import json
 from google import genai
 from app.core.config import GEMINI_API_KEY, GEMINI_MODEL_ID, MOCK_GEMINI_RESPONSE
@@ -8,7 +8,7 @@ from app.core.schemas import WineDetails
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
-async def extract_wine_details_from_file(pdf: BinaryIO) -> List[Dict]:
+async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
     """Extracts wine details from a PDF file using the Gemini API."""
     if MOCK_GEMINI_RESPONSE:
         return json.loads("""
