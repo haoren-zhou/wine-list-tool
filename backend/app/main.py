@@ -85,7 +85,7 @@ def deduplicate_wine_list(wine_details: list[dict]) -> list[dict]:
 
 
 @app.post("/upload")
-async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
+async def parse_pdf(file: UploadFile | None = None) -> list:
     """Parses an uploaded PDF file to extract, enrich, and return wine details.
 
     This endpoint accepts a PDF file, extracts wine names using the Gemini API,
@@ -128,4 +128,4 @@ async def parse_pdf(file: UploadFile | None = None) -> dict[str, str | list]:
         )
     logger.info(f"Processed {len(wine_details)} wines from {file.filename}")
     logger.debug(f"Wine details: {wine_details}")
-    return {"filename": file.filename, "wine_details": wine_details}
+    return wine_details

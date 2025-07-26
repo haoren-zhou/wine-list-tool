@@ -25,7 +25,7 @@ function FormPage() {
 
     try {
       const result = await uploadFile(file);
-      setWineList(result.wine_details);
+      setWineList(result);
       setFileStatus(FileStatus.SUCCESS);
     } catch (error) {
       console.error(error);
