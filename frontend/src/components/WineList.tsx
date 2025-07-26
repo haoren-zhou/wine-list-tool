@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Wine } from '../types';
 
 interface WineListProps {

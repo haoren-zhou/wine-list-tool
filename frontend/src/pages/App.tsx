@@ -1,8 +1,8 @@
+import LoadingSVG from '../components/LoadingSVG';
 import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus } from '../utils/constants';
-import FormPage from './FormPage';
 import FilterableWineList from './FilterableWineList';
-import LoadingSVG from '../components/LoadingSVG';
+import FormPage from './FormPage';
 // import { Routes, Route, Link } from 'react-router-dom';
 
 function App() {
