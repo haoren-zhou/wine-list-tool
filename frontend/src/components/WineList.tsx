@@ -77,7 +77,8 @@ function WineCard({ wine, isActive, onToggle }: WineCardProps) {
       >
         <div className="p-4 bg-gray-600 text-gray-200 text-xs md:text-sm xl:text-base 2xl:text-lg">
           <p>
-            <strong>Name on Wine List:</strong> {wine.wine_name} {wine.vintage}
+            <strong>Name on Wine List:</strong> {wine.wine_name} (
+            {(wine.match_coefficient * 100).toFixed(0)}% match)
           </p>
           <p>
             <strong>Style:</strong> {wine.style_name}
