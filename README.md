@@ -7,6 +7,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
 *   Upload a PDF wine list.
 *   Extract wine names from the PDF using Google's Gemini API.
 *   Enrich wine data with information from the Vivino API.
+*   Calculate the Vivino match similarity with the original wine name using Sorensen-Dice coefficient.
 *   Display the enriched wine list in a filterable and sortable format.
 *   Containerized with Docker for easy setup and deployment.
 
@@ -14,6 +15,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
 
 *   **Frontend:**
     *   React
+    *   TypeScript
     *   Vite
     *   Tailwind CSS
 *   **Backend:**
