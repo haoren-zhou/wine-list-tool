@@ -26,8 +26,6 @@ services:
     restart: unless-stopped
     environment:
       - FRONTEND_ORIGINS=localhost # local testing
-    ports: 
-      - "8000:8000"
     healthcheck:
       test: ["CMD-SHELL", "curl --silent --fail localhost:8000/health || exit 1"]
       interval: 10s
