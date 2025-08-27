@@ -66,33 +66,6 @@ The application will be available at http://localhost.
 4.  The application will process the PDF, and the extracted and enriched wine list will be displayed.
 5.  You can filter the list by various criteria and sort by price or Vivino rating.
 
-## Project Structure
-
-### Frontend
-
-The `frontend` directory contains the React application.
-
-*   `src/pages`: Main page components (`App.jsx`, `FormPage.jsx`, `FilterableWineList.jsx`).
-*   `src/components`: Reusable React components.
-*   `src/contexts`: React context for managing application state.
-*   `src/hooks`: Custom React hooks.
-*   `src/services`: API communication logic.
-*   `src/styles`: CSS files.
-*   `src/utils`: Utility functions and constants.
-
-### Backend
-
-The `backend` directory contains the FastAPI application.
-
-*   `app/main.py`: The main FastAPI application file, defining endpoints.
-*   `app/core`: Configuration and schemas.
-*   `app/services`: Logic for interacting with external APIs (Gemini, Vivino).
-
-## API Endpoints
-
-*   `GET /health`: Health check endpoint.
-*   `POST /upload`: Upload a PDF file for processing.
-
 ## Docker Compose Environment Variables
 
 ### Frontend
@@ -103,3 +76,10 @@ The `backend` directory contains the FastAPI application.
 
 *   `FRONTEND_ORIGINS`: Comma-separated list of allowed frontend origins for CORS. Change this if deploying service externally.
 *   `GOOGLE_API_KEY` and `GEMINI_MODEL_ID` can also be set here, overriding the `.env` file in the `backend` directory.
+
+## TODO
+
+*   [ ] Improve error handling in frontend (output meaningful message if error occurs)
+*   [ ] Add screenshots/demo to docs
+*   [ ] Test using event stream to construct wine list from API stream (use `generate_content_stream` instead of `generate_content`)
+    *   [ ] Parse JSON format in backend
