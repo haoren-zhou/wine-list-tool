@@ -1,13 +1,20 @@
-from app.core.config import VIVINO_API_URL
-from app.core.schemas import WineDetails
-import httpx
 import asyncio
 import logging
+
+import httpx
+
+from app.core.config import VIVINO_API_URL
+from app.core.schemas import WineDetails
 
 logger = logging.getLogger("backend.app")
 
 # Create a single, reusable client to manage the connection pool.
-client = httpx.AsyncClient(follow_redirects=True, headers={"User-agent": "user"})
+client = httpx.AsyncClient(
+    follow_redirects=True,
+    headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    },
+)
 
 WINE_TYPES = {
     1: "Red",
