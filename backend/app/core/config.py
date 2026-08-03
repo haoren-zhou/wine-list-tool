@@ -17,7 +17,8 @@ MOCK_GEMINI_RESPONSE = os.getenv("MOCK_GEMINI_RESPONSE", "false").lower() in (
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 SORENSEN_DICE_N = int(os.getenv("SORENSEN_DICE_N", 2))
 
-if not GEMINI_API_KEY:
+# Mock mode exists for local development without a real API key.
+if not GEMINI_API_KEY and not MOCK_GEMINI_RESPONSE:
     raise ValueError(
         "GEMINI_API_KEY must be set in the environment variables or .env file"
     )

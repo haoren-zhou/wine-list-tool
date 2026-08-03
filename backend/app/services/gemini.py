@@ -9,8 +9,8 @@ from app.core.config import GEMINI_API_KEY, GEMINI_MODEL_ID, MOCK_GEMINI_RESPONS
 from app.core.exceptions import GeminiError
 from app.core.schemas import WineDetailsBase
 
-# Configure the Gemini Client
-client = genai.Client(api_key=GEMINI_API_KEY)
+# The client requires a real API key, so only create it when not mocking.
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
 async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
@@ -62,6 +62,9 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
 
     Do not provide any additional commentary and return only the JSON object. Ensure that every single wine is listed and no page is ignored. Pay attention to but do not include section headers or titles. For wines with multiple formats, return separate objects. Return a list of json objects only.
     """
+    if client is None:
+        # Unreachable: config validation requires a key when not mocking.
+        raise GeminiError("Gemini client is not configured")
     try:
         uploaded_file = await client.aio.files.upload(
             file=pdf,  # type: ignore
