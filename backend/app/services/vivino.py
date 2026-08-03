@@ -60,7 +60,9 @@ async def get_grapes() -> dict[int, str]:
 
 async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
     """Queries Vivino's public Algolia API for wine data.
-    Returns JSON data for the wine if found, otherwise returns None.
+
+    Returns a dict of Vivino data for the top matching vintage, or None if
+    no suitable match is found. Keys:
         "vivino_match": Name of the wine as found in Vivino
         "rating_average": Average rating of the wine
         "rating_count": Number of ratings for the wine
@@ -69,7 +71,9 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
         "grapes": List of grape IDs used in the wine
     """
     vintage_str = str(vintage) if vintage else ""
-    wine_name_full = f"{wine_name} {vintage_str}" if vintage else wine_name
+    # Appending the vintage improves the Algolia query, but the original
+    # wine name is what we keep and display.
+    query = f"{wine_name} {vintage_str}" if vintage else wine_name
     headers = {
         "x-algolia-api-key": VIVINO_ALGOLIA_API_KEY,
         "x-algolia-application-id": VIVINO_ALGOLIA_APP_ID,
@@ -79,13 +83,13 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
         response = await client.post(
             VIVINO_API_URL,
             json={
-                "query": wine_name_full,
+                "query": query,
             },
             headers=headers,
         )
         response.raise_for_status()
     except httpx.HTTPError as e:
-        logger.warning("Vivino request failed for '%s': %s", wine_name_full, e)
+        logger.warning("Vivino request failed for '%s': %s", query, e)
         return None
     results = response.json()
     if results["nbHits"] == 0:
@@ -97,7 +101,6 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
             if vintage_details["statistics"]["status"] != "Normal":
                 return None
             return {
-                "wine_name": wine_name_full,
                 "vivino_match": vintage_details["name"],
                 "rating_average": float(
                     vintage_details["statistics"]["ratings_average"]
@@ -154,8 +157,12 @@ async def get_vivino_data_all(
             )
 
             new_wine_details = WineDetails(
-                wine_name=vivino_data["wine_name"],
-                vintage=original_wine.vintage,
+                wine_name=original_wine.wine_name,
+                vintage=(
+                    original_wine.vintage
+                    if original_wine.vintage is not None
+                    else "N.V."
+                ),
                 price=original_wine.price,
                 volume=original_wine.volume,
                 vivino_match=vivino_data["vivino_match"],
