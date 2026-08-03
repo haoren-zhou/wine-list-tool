@@ -9,7 +9,7 @@ interface WineContextProviderProps {
 }
 
 function WineContextProvider({ children }: WineContextProviderProps) {
-  const [fileStatus, setFileStatus] = useState<string>(FileStatus.IDLE);
+  const [fileStatus, setFileStatus] = useState<FileStatus>(FileStatus.IDLE);
   const [wineList, setWineList] = useState<Wine[]>([]);
 
   return (

@@ -4,3 +4,5 @@ export const FileStatus = Object.freeze({
   SUCCESS: 'SUCCESS',
   ERROR: 'ERROR',
 });
+
+export type FileStatus = (typeof FileStatus)[keyof typeof FileStatus];
