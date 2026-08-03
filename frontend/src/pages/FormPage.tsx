@@ -4,7 +4,7 @@ import { FileStatus } from '../utils/constants';
 import { uploadFile } from '../services/api';
 
 function FormPage() {
-  const { setFileStatus, setWineList } = useWineContext();
+  const { setFileStatus, setWineList, setErrorMessage } = useWineContext();
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -27,7 +27,9 @@ function FormPage() {
       setWineList(result);
       setFileStatus(FileStatus.SUCCESS);
     } catch (error) {
-      console.error(error);
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Error processing file.',
+      );
       setFileStatus(FileStatus.ERROR);
     }
   };

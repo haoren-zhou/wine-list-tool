@@ -5,7 +5,8 @@ import FilterableWineList from './FilterableWineList';
 import FormPage from './FormPage';
 
 function App() {
-  const { fileStatus, setFileStatus, wineList } = useWineContext();
+  const { fileStatus, setFileStatus, wineList, errorMessage } =
+    useWineContext();
   const renderContent = () => {
     switch (fileStatus) {
       case FileStatus.PROCESSING:
@@ -21,10 +22,17 @@ function App() {
         return <FilterableWineList initialWinelist={wineList} />;
       case FileStatus.ERROR:
         return (
-          <>
-            <p>Error occurred during file processing.</p>
-            <button onClick={() => setFileStatus(FileStatus.IDLE)}>Back</button>
-          </>
+          <div className="text-center text-white">
+            <p className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
+              {errorMessage ?? 'Error occurred during file processing.'}
+            </p>
+            <button
+              className="mt-4 px-4 py-2 bg-gray-700 rounded-md cursor-pointer"
+              onClick={() => setFileStatus(FileStatus.IDLE)}
+            >
+              Back
+            </button>
+          </div>
         );
       case FileStatus.IDLE:
       default:

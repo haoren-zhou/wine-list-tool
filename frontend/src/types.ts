@@ -23,4 +23,6 @@ export interface WineContextType {
   setWineList: Dispatch<SetStateAction<Wine[]>>;
   fileStatus: FileStatus;
   setFileStatus: Dispatch<SetStateAction<FileStatus>>;
+  errorMessage: string | null;
+  setErrorMessage: Dispatch<SetStateAction<string | null>>;
 }
