@@ -1,4 +1,5 @@
-.sample_env
+.env
 .venv/
-__pycache__
+__pycache__/
+.ruff_cache/
 README.md
