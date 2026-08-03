@@ -33,7 +33,7 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
   });
 
   const processedWinelist: Wine[] = useMemo(() => {
-    let filtered = initialWinelist.filter(
+    const filtered = initialWinelist.filter(
       (wineDetails) =>
         wineDetails.rating_average >= filters.minRating &&
         wineDetails.price <= filters.maxPrice &&

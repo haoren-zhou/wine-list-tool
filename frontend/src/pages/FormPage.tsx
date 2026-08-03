@@ -67,7 +67,7 @@ function FormPage() {
             type="file"
             accept=".pdf"
             className="hidden"
-            onChange={handleFileChange}
+            onChange={(event) => void handleFileChange(event)}
           />
         </label>
       </div>
