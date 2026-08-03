@@ -2,9 +2,11 @@ import json
 from typing import BinaryIO
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai.types import GenerateContentConfig, ThinkingConfig, ThinkingLevel
 
 from app.core.config import GEMINI_API_KEY, GEMINI_MODEL_ID, MOCK_GEMINI_RESPONSE
+from app.core.exceptions import GeminiError
 from app.core.schemas import WineDetailsBase
 
 # Configure the Gemini Client
@@ -60,20 +62,26 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
 
     Do not provide any additional commentary and return only the JSON object. Ensure that every single wine is listed and no page is ignored. Pay attention to but do not include section headers or titles. For wines with multiple formats, return separate objects. Return a list of json objects only.
     """
-    uploaded_file = await client.aio.files.upload(
-        file=pdf,  # type: ignore
-        config={"mime_type": "application/pdf"},
-    )
-    response = await client.aio.models.generate_content(
-        model=GEMINI_MODEL_ID,
-        contents=[uploaded_file, "\n\n", prompt],
-        config=GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=list[WineDetailsBase],
-            seed=42,
-            thinking_config=ThinkingConfig(thinking_level=ThinkingLevel.MINIMAL),
-        ),
-    )
+    try:
+        uploaded_file = await client.aio.files.upload(
+            file=pdf,  # type: ignore
+            config={"mime_type": "application/pdf"},
+        )
+        response = await client.aio.models.generate_content(
+            model=GEMINI_MODEL_ID,
+            contents=[uploaded_file, "\n\n", prompt],
+            config=GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=list[WineDetailsBase],
+                seed=42,
+                thinking_config=ThinkingConfig(thinking_level=ThinkingLevel.MINIMAL),
+            ),
+        )
+    except genai_errors.APIError as e:
+        raise GeminiError(f"Gemini API request failed: {e}") from e
     if response.text is None:
         return []
-    return json.loads(response.text)
+    try:
+        return json.loads(response.text)
+    except json.JSONDecodeError as e:
+        raise GeminiError("Gemini returned invalid JSON") from e

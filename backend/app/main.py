@@ -7,6 +7,7 @@ import io
 from contextlib import asynccontextmanager
 from app.core.config import FRONTEND_ORIGINS, SORENSEN_DICE_N
 from app.core.logging import setup_logging
+from app.core.exceptions import UpstreamServiceError
 from app.services.gemini import extract_wine_details_from_file
 from app.services.vivino import (
     get_vivino_data_all,
@@ -126,8 +127,16 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
         )
         wine_details = update_wine_similarity(wine_details, n=SORENSEN_DICE_N)
 
+    except UpstreamServiceError as e:
+        logger.exception(
+            f"Upstream service error while processing {file.filename}: {e}"
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=f"Upstream service error while processing '{file.filename}'.",
+        )
     except Exception as e:
-        logger.error(f"Error processing PDF: {e}")
+        logger.exception(f"Unexpected error processing PDF: {e}")
         raise HTTPException(
             status_code=500, detail=f"Error processing '{file.filename}': {e}"
         )
