@@ -12,10 +12,12 @@ RUN uv python install 3.12
 
 WORKDIR /app
 
-COPY . .
-
+# Install dependencies before copying the source so this layer is cached
+# unless the dependency manifests change.
+COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-install-project --no-dev
 
+COPY . .
 RUN uv sync --locked --no-dev
 
 EXPOSE 8000

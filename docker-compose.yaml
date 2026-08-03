@@ -4,7 +4,7 @@ services:
     build: ./frontend
     restart: unless-stopped
     volumes:
-      - ./frontend/docker/default.conf:/tmp/default.conf
+      - ./frontend/docker/default.conf:/tmp/default.conf:ro
     environment: 
       - FASTAPI_SERVER_ADDR=backend:8000
     ports:
@@ -25,13 +25,13 @@ services:
     build: ./backend
     restart: unless-stopped
     environment:
-      - FRONTEND_ORIGINS=localhost # local testing
+      # local testing; change this if deploying service externally
+      - FRONTEND_ORIGINS=http://localhost
     healthcheck:
       test: ["CMD-SHELL", "curl --silent --fail localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 3
-    command: uv run --no-dev uvicorn app.main:app --host 0.0.0.0 --port 8000
     networks:
       - back-tier
 
