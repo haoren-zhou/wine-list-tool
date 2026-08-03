@@ -48,7 +48,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
     *   Create a `.env` file in the `backend` directory. You can copy `sample.env` as a template.
         *   `GOOGLE_API_KEY`: Your Google Gemini API key, from [Google AI Studio](https://aistudio.google.com/apikey).
         *   `GEMINI_MODEL_ID` *(Optional)*: Specific Gemini model ID, see [Gemini API Docs](https://ai.google.dev/gemini-api/docs/models) for valid model IDs
-            *   Default: `gemini-2.5-flash-lite`
+            *   Default: `gemini-3.5-flash-lite`
 
 3.  **Build and run with Docker Compose:**
     ```bash
