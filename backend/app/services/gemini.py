@@ -1,6 +1,9 @@
-from typing import BinaryIO
 import json
+from typing import BinaryIO
+
 from google import genai
+from google.genai.types import GenerateContentConfig, ThinkingConfig, ThinkingLevel
+
 from app.core.config import GEMINI_API_KEY, GEMINI_MODEL_ID, MOCK_GEMINI_RESPONSE
 from app.core.schemas import WineDetailsBase
 
@@ -64,13 +67,12 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
     response = await client.aio.models.generate_content(
         model=GEMINI_MODEL_ID,
         contents=[uploaded_file, "\n\n", prompt],
-        config={
-            "response_mime_type": "application/json",
-            "response_schema": list[WineDetailsBase],
-            "temperature": 0.0,
-            "seed": 42,
-            "thinking_config": {"thinking_budget": 0},
-        },
+        config=GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=list[WineDetailsBase],
+            seed=42,
+            thinking_config=ThinkingConfig(thinking_level=ThinkingLevel.MINIMAL),
+        ),
     )
     if response.text is None:
         return []
