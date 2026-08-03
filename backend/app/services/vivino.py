@@ -4,16 +4,21 @@ import logging
 import httpx
 
 from app.core.config import VIVINO_API_URL
+from app.core.exceptions import VivinoError
 from app.core.schemas import WineDetails
 
 logger = logging.getLogger("backend.app")
 
 # Create a single, reusable client to manage the connection pool.
+# The connection limits bound the number of concurrent requests sent to the
+# Vivino API, so large wine lists are queued instead of overwhelming it.
 client = httpx.AsyncClient(
     follow_redirects=True,
     headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     },
+    limits=httpx.Limits(max_connections=10, max_keepalive_connections=10),
+    timeout=httpx.Timeout(10.0, pool=60.0),
 )
 
 WINE_TYPES = {
@@ -29,15 +34,21 @@ WINE_TYPES = {
 # API Functions to be executed once
 async def get_wine_styles() -> dict[int, str]:
     """Fetches all wine styles id -> name mappings from the Vivino API."""
-    response = await client.get("https://www.vivino.com/api/wine_styles")
-    response.raise_for_status()
+    try:
+        response = await client.get("https://www.vivino.com/api/wine_styles")
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise VivinoError("failed to fetch wine styles") from e
     return {s["id"]: s["name"] for s in response.json()["wine_styles"]}
 
 
 async def get_grapes() -> dict[int, str]:
     """Fetches all grape types id -> name mappings from the Vivino API."""
-    response = await client.get("https://www.vivino.com/api/grapes")
-    response.raise_for_status()
+    try:
+        response = await client.get("https://www.vivino.com/api/grapes")
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise VivinoError("failed to fetch grapes") from e
     return {g["id"]: g["name"] for g in response.json()["grapes"]}
 
 
@@ -67,8 +78,8 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
             headers=headers,
         )
         response.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        print(f"Vivino API Error: {e.response.status_code} - {e.response.text}")
+    except httpx.HTTPError as e:
+        logger.warning("Vivino request failed for '%s': %s", wine_name_full, e)
         return None
     results = response.json()
     if results["nbHits"] == 0:
@@ -107,10 +118,17 @@ async def get_vivino_data_all(wine_details: list[dict]) -> list[WineDetails]:
     tasks = [
         get_vivino_data(wine["wine_name"], wine.get("vintage")) for wine in wine_details
     ]
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
     updated_wine_details = []
     for original_wine, vivino_data in zip(wine_details, results):
+        if isinstance(vivino_data, Exception):
+            logger.warning(
+                "Skipping wine '%s': %s",
+                original_wine.get("wine_name"),
+                vivino_data,
+            )
+            continue
         if vivino_data:
             # Handle potential missing/incorrect data
             type_id = (
