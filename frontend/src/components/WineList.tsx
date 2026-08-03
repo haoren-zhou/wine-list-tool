@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { Wine } from '../types';
+import { getWineKey } from '../utils/wine';
 
 interface WineListProps {
   winelist: Wine[];
@@ -13,7 +14,7 @@ function WineList({ winelist, activeKey, setActiveKey }: WineListProps) {
     <div className="space-y-4">
       {winelist.length ? (
         winelist.map((wine) => {
-          const key = `${wine.wine_name}-${wine.vintage}-${wine.volume}`;
+          const key = getWineKey(wine);
           const isActive = activeKey === key;
           return (
             <WineCard
@@ -56,7 +57,11 @@ function WineCard({ wine, isActive, onToggle }: WineCardProps) {
 
   return (
     <div className="bg-gray-700 rounded-md overflow-hidden">
-      <div className="p-4 cursor-pointer" onClick={onToggle}>
+      <button
+        type="button"
+        className="w-full p-4 cursor-pointer text-left"
+        onClick={onToggle}
+      >
         <div className="flex items-center justify-between text-white">
           <div className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
             {wine.vivino_match}
@@ -66,7 +71,7 @@ function WineCard({ wine, isActive, onToggle }: WineCardProps) {
             {wine.type_name} &middot; ${wine.price}
           </div>
         </div>
-      </div>
+      </button>
       <div
         ref={contentRef}
         style={{

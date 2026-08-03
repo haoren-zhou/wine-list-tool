@@ -6,3 +6,6 @@ export const FileStatus = Object.freeze({
 });
 
 export type FileStatus = (typeof FileStatus)[keyof typeof FileStatus];
+
+/** Slider position representing "no price limit" in the price filter. */
+export const MAX_PRICE_SLIDER_VALUE = 3005;

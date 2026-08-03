@@ -1,5 +1,5 @@
-import type { Dispatch, SetStateAction } from 'react';
-import React from 'react';
+import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import { MAX_PRICE_SLIDER_VALUE } from '../utils/constants';
 
 export interface FilterOptions {
   minRating: number;
@@ -22,39 +22,37 @@ function Filters({
   filters,
   setFilters,
 }: FiltersProps) {
-  const handleMinRatingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMinRatingChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       minRating: parseFloat(e.target.value),
     }));
   };
 
-  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let newMaxPrice = parseFloat(e.target.value);
-    newMaxPrice = newMaxPrice === 3005 ? Infinity : newMaxPrice;
+  const handleMaxPriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const sliderValue = parseFloat(e.target.value);
     setFilters((prevFilters) => ({
       ...prevFilters,
-      maxPrice: newMaxPrice,
+      // The max slider position represents "no price limit"
+      maxPrice: sliderValue === MAX_PRICE_SLIDER_VALUE ? Infinity : sliderValue,
     }));
   };
 
-  const handleTypeFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTypeFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       typeFilter: e.target.value,
     }));
   };
 
-  const handleFormatFilterChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
+  const handleFormatFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
-      formatFilter: parseFloat(e.target.value),
+      formatFilter: Number(e.target.value),
     }));
   };
 
-  const handleSortByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSortByChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       sortBy: e.target.value,
@@ -74,11 +72,11 @@ function Filters({
           type="range"
           min="3.0"
           max="5.0"
-          defaultValue="4.0"
           step="0.1"
           id="ratingThreshold"
           className="w-full"
-          onInput={handleMinRatingChange}
+          value={filters.minRating}
+          onChange={handleMinRatingChange}
         />
       </div>
       <div className="col-span-full md:col-span-6">
@@ -86,17 +84,21 @@ function Filters({
           Max. Price ($)
         </label>
         <span className="float-right">
-          {filters.maxPrice > 3000 ? '-' : filters.maxPrice}
+          {filters.maxPrice === Infinity ? '-' : filters.maxPrice}
         </span>
         <input
           type="range"
           min="0"
-          max="3005"
-          defaultValue="1500"
+          max={MAX_PRICE_SLIDER_VALUE}
           step="5"
           id="priceThreshold"
           className="w-full"
-          onInput={handleMaxPriceChange}
+          value={
+            filters.maxPrice === Infinity
+              ? MAX_PRICE_SLIDER_VALUE
+              : filters.maxPrice
+          }
+          onChange={handleMaxPriceChange}
         />
       </div>
       <div className="col-span-full md:col-span-4 mt-1 md:mt-0">
@@ -106,12 +108,12 @@ function Filters({
         <select
           className="w-full bg-gray-800 px-2.5 py-2 pr-8 rounded leading-tight"
           id="typeFilter"
-          defaultValue=""
+          value={filters.typeFilter}
           onChange={handleTypeFilterChange}
         >
           <option value="">All</option>
-          {wineTypes.map((type, index) => (
-            <option key={index}>{type}</option>
+          {wineTypes.map((type) => (
+            <option key={type}>{type}</option>
           ))}
         </select>
       </div>
@@ -122,12 +124,12 @@ function Filters({
         <select
           className="w-full bg-gray-800 px-2.5 py-2 pr-8 rounded leading-tight"
           id="formatFilter"
-          defaultValue="0"
+          value={filters.formatFilter}
           onChange={handleFormatFilterChange}
         >
           <option value={0}>All</option>
-          {wineFormats.map((format, index) => (
-            <option key={index} value={format}>
+          {wineFormats.map((format) => (
+            <option key={format} value={format}>
               {format} ml
             </option>
           ))}

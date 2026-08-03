@@ -4,6 +4,7 @@ import Filters from '../components/Filters';
 import Pagination from '../components/Pagination';
 import WineList from '../components/WineList';
 import type { Wine } from '../types';
+import { getWineKey } from '../utils/wine';
 
 interface FilterableWineListProps {
   initialWinelist: Wine[];
@@ -21,16 +22,20 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
+  // Kept as state so an items-per-page selector can be added to Pagination
   const [itemsPerPage] = useState(10);
 
-  const wineTypes: string[] = [
-    ...new Set(initialWinelist.map((wine) => wine.type_name)),
-  ];
-  const wineFormats: number[] = [
-    ...new Set(initialWinelist.map((wine) => wine.volume)),
-  ].sort((a, b) => {
-    return a - b; // sort formats by volume ascending
-  });
+  const wineTypes = useMemo(
+    () => [...new Set(initialWinelist.map((wine) => wine.type_name))],
+    [initialWinelist],
+  );
+  const wineFormats = useMemo(
+    () =>
+      [...new Set(initialWinelist.map((wine) => wine.volume))].sort(
+        (a, b) => a - b,
+      ),
+    [initialWinelist],
+  );
 
   const processedWinelist: Wine[] = useMemo(() => {
     const filtered = initialWinelist.filter(
@@ -83,10 +88,9 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
   useEffect(() => {
     // If there's an active card, check if it's still in the filtered list
     if (activeKey !== 'none') {
-      const isCardStillVisible = paginatedWinelist.some((wine) => {
-        const key = `${wine.wine_name}-${wine.vintage}-${wine.volume}`;
-        return key === activeKey;
-      });
+      const isCardStillVisible = paginatedWinelist.some(
+        (wine) => getWineKey(wine) === activeKey,
+      );
 
       // If the active card is no longer visible, close it
       if (!isCardStillVisible) {
