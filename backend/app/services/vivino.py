@@ -3,9 +3,15 @@ import logging
 
 import httpx
 
-from app.core.config import VIVINO_API_URL
+from app.core.config import (
+    VIVINO_ALGOLIA_API_KEY,
+    VIVINO_ALGOLIA_APP_ID,
+    VIVINO_API_URL,
+    VIVINO_GRAPES_URL,
+    VIVINO_STYLES_URL,
+)
 from app.core.exceptions import VivinoError
-from app.core.schemas import WineDetails
+from app.core.schemas import WineDetails, WineDetailsBase
 
 logger = logging.getLogger("backend.app")
 
@@ -35,7 +41,7 @@ WINE_TYPES = {
 async def get_wine_styles() -> dict[int, str]:
     """Fetches all wine styles id -> name mappings from the Vivino API."""
     try:
-        response = await client.get("https://www.vivino.com/api/wine_styles")
+        response = await client.get(VIVINO_STYLES_URL)
         response.raise_for_status()
     except httpx.HTTPError as e:
         raise VivinoError("failed to fetch wine styles") from e
@@ -45,7 +51,7 @@ async def get_wine_styles() -> dict[int, str]:
 async def get_grapes() -> dict[int, str]:
     """Fetches all grape types id -> name mappings from the Vivino API."""
     try:
-        response = await client.get("https://www.vivino.com/api/grapes")
+        response = await client.get(VIVINO_GRAPES_URL)
         response.raise_for_status()
     except httpx.HTTPError as e:
         raise VivinoError("failed to fetch grapes") from e
@@ -65,8 +71,8 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
     vintage_str = str(vintage) if vintage else ""
     wine_name_full = f"{wine_name} {vintage_str}" if vintage else wine_name
     headers = {
-        "x-algolia-api-key": "60c11b2f1068885161d95ca068d3a6ae",
-        "x-algolia-application-id": "9TAKGWJUXL",
+        "x-algolia-api-key": VIVINO_ALGOLIA_API_KEY,
+        "x-algolia-application-id": VIVINO_ALGOLIA_APP_ID,
     }
 
     try:
@@ -104,20 +110,20 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
     return None
 
 
-async def get_vivino_data_all(wine_details: list[dict]) -> list[WineDetails]:
+async def get_vivino_data_all(
+    wine_details: list[WineDetailsBase],
+) -> list[WineDetails]:
     """Gets Vivino data for all wines in a list concurrently.
     Removes wines that are not found in Vivino or do not have sufficient
     reviews for a rating.
 
     Args:
-        wine_details: A list of wine dictionaries to be enriched.
+        wine_details: The wines extracted from the wine list.
 
     Returns:
-        A new list of wine dictionaries, enriched with Vivino data.
+        A new list of wines, enriched with Vivino data.
     """
-    tasks = [
-        get_vivino_data(wine["wine_name"], wine.get("vintage")) for wine in wine_details
-    ]
+    tasks = [get_vivino_data(wine.wine_name, wine.vintage) for wine in wine_details]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     updated_wine_details = []
@@ -125,12 +131,12 @@ async def get_vivino_data_all(wine_details: list[dict]) -> list[WineDetails]:
         if isinstance(vivino_data, Exception):
             logger.warning(
                 "Skipping wine '%s': %s",
-                original_wine.get("wine_name"),
+                original_wine.wine_name,
                 vivino_data,
             )
             continue
         if vivino_data:
-            # Handle potential missing/incorrect data
+            # Vivino may return unexpected types for these fields
             type_id = (
                 vivino_data["type_id"]
                 if isinstance(vivino_data["type_id"], int)
@@ -149,9 +155,9 @@ async def get_vivino_data_all(wine_details: list[dict]) -> list[WineDetails]:
 
             new_wine_details = WineDetails(
                 wine_name=vivino_data["wine_name"],
-                vintage=original_wine.get("vintage", "N.V."),
-                price=original_wine.get("price", 0),
-                volume=original_wine.get("volume", 0),
+                vintage=original_wine.vintage,
+                price=original_wine.price,
+                volume=original_wine.volume,
                 vivino_match=vivino_data["vivino_match"],
                 rating_average=vivino_data["rating_average"],
                 rating_count=vivino_data["rating_count"],

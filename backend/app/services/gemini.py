@@ -13,10 +13,12 @@ from app.core.schemas import WineDetailsBase
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
-async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
+async def extract_wine_details_from_file(pdf: BinaryIO) -> list[WineDetailsBase]:
     """Extracts wine details from a PDF file using the Gemini API."""
     if MOCK_GEMINI_RESPONSE:
-        return json.loads("""
+        return [
+            WineDetailsBase(**wine)
+            for wine in json.loads("""
 [
     {
         "wine_name": "Château Margaux",
@@ -38,6 +40,7 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
     }
 ]
 """)
+        ]
     prompt = """This is a wine list of a restaurant.
     Output a JSON of all the wines in the wine list only. Ignore all non-wine beverages, house wines or any other non-specific wine names.
     The JSON should have the following keys:
@@ -84,7 +87,6 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[dict]:
         raise GeminiError(f"Gemini API request failed: {e}") from e
     if response.text is None:
         return []
-    try:
-        return json.loads(response.text)
-    except json.JSONDecodeError as e:
-        raise GeminiError("Gemini returned invalid JSON") from e
+    if response.parsed is None:
+        raise GeminiError("Gemini returned data that did not match the expected schema")
+    return list(response.parsed)

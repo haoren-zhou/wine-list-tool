@@ -6,6 +6,11 @@ load_dotenv(find_dotenv())
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-3.5-flash-lite")
 VIVINO_API_URL = "https://9takgwjuxl-dsn.algolia.net/1/indexes/WINES_prod/query"
+# Public credentials from Vivino's frontend, required to query their Algolia index
+VIVINO_ALGOLIA_API_KEY = "60c11b2f1068885161d95ca068d3a6ae"
+VIVINO_ALGOLIA_APP_ID = "9TAKGWJUXL"
+VIVINO_STYLES_URL = "https://www.vivino.com/api/wine_styles"
+VIVINO_GRAPES_URL = "https://www.vivino.com/api/grapes"
 FRONTEND_ORIGINS = os.getenv(
     "FRONTEND_ORIGINS", "http://localhost:5173,http://localhost:3000"
 )
