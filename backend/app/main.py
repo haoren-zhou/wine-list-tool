@@ -116,10 +116,10 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
         raise HTTPException(status_code=400, detail="Please upload a PDF file.")
 
     try:
-        logger.info(f"Processing file: {file.filename}")
+        logger.info("Processing file: %s", file.filename)
         pdf_contents = await file.read()
         wine_details = await extract_wine_details_from_file(io.BytesIO(pdf_contents))
-        logger.info(f"gemini extracted data: {wine_details}")
+        logger.debug("Gemini extracted data: %s", wine_details)
         wine_details = await get_vivino_data_all(wine_details)
         wine_details = deduplicate_wine_list(wine_details)
         wine_details = update_vivino_ids_to_names(
@@ -131,19 +131,19 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
 
     except UpstreamServiceError as e:
         logger.exception(
-            f"Upstream service error while processing {file.filename}: {e}"
+            "Upstream service error while processing %s: %s", file.filename, e
         )
         raise HTTPException(
             status_code=502,
             detail=f"Upstream service error while processing '{file.filename}'.",
         )
-    except Exception as e:
-        logger.exception(f"Unexpected error processing PDF: {e}")
+    except Exception:
+        logger.exception("Unexpected error processing %s", file.filename)
         raise HTTPException(
-            status_code=500, detail=f"Error processing '{file.filename}': {e}"
+            status_code=500, detail=f"Error processing '{file.filename}'."
         )
 
-    logger.info(f"Processed {len(wine_details)} wines from {file.filename}")
-    logger.debug(f"Wine details: {wine_details}")
+    logger.info("Processed %d wines from %s", len(wine_details), file.filename)
+    logger.debug("Wine details: %s", wine_details)
 
     return wine_details

@@ -5,7 +5,7 @@ from app.core.schemas import WineDetails
 logger = logging.getLogger("backend.app")
 
 
-def remove_punctation(s: str) -> str:
+def remove_punctuation(s: str) -> str:
     """Utility function to remove punctuation from a given string."""
     translator = str.maketrans("", "", string.punctuation)
     return s.translate(translator)
@@ -40,8 +40,8 @@ def sorensen_dice_similarity(s1: str, s2: str, n: int = 2) -> float:
     if not isinstance(n, int) or n < 1:
         raise ValueError("n must be a positive integer.")
 
-    s1 = remove_punctation(s1.lower())
-    s2 = remove_punctation(s2.lower())
+    s1 = remove_punctuation(s1.lower())
+    s2 = remove_punctuation(s2.lower())
 
     ngrams1 = generate_ngrams(s1, n)
     ngrams2 = generate_ngrams(s2, n)
@@ -57,16 +57,14 @@ def sorensen_dice_similarity(s1: str, s2: str, n: int = 2) -> float:
         return 0.0
 
     intersection = set1.intersection(set2)
-
-    denominator = len(set1) + len(set2)
-
-    if denominator == 0:
-        return 0.0
-
-    dice_coefficient = (2.0 * len(intersection)) / denominator
+    dice_coefficient = (2.0 * len(intersection)) / (len(set1) + len(set2))
 
     logger.debug(
-        f"sorensen_dice_similarity(s1='{s1}', s2='{s2}', n={n}) = {dice_coefficient}\n"
+        "sorensen_dice_similarity(s1=%r, s2=%r, n=%d) = %f",
+        s1,
+        s2,
+        n,
+        dice_coefficient,
     )
     return dice_coefficient
 
@@ -78,11 +76,11 @@ def update_wine_similarity(
     Updates the wine details with similarity scores based on the Sorensen-Dice coefficient.
 
     Args:
-        wine_details (list[dict]): A list of dictionaries, each representing a wine.
-        n (int): The size of the n-gram to use.
+        wine_details: The list of wines to update.
+        n: The size of the n-gram to use.
 
     Returns:
-        list[dict]: The updated list of wine details with similarity scores.
+        The updated list of wines with similarity scores.
     """
     for wine in wine_details:
         dice_coefficient = sorensen_dice_similarity(
