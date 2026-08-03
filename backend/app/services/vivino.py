@@ -37,6 +37,11 @@ WINE_TYPES = {
 }
 
 
+async def close_client() -> None:
+    """Closes the shared HTTP client. Called on application shutdown."""
+    await client.aclose()
+
+
 # API Functions to be executed once
 async def get_wine_styles() -> dict[int, str]:
     """Fetches all wine styles id -> name mappings from the Vivino API."""

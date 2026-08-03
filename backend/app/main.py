@@ -10,6 +10,7 @@ from app.core.logging import setup_logging
 from app.core.exceptions import UpstreamServiceError
 from app.services.gemini import extract_wine_details_from_file
 from app.services.vivino import (
+    close_client,
     get_vivino_data_all,
     update_vivino_ids_to_names,
     get_grapes,
@@ -30,17 +31,18 @@ logger = logging.getLogger("backend.app")
 async def lifespan(app: FastAPI):
     """Asynchronous context manager for FastAPI.
 
-    This context manager is used to load static data for grapes and
-    wine styles.
+    Loads static data for grapes and wine styles on startup, and releases
+    the shared Vivino HTTP client on shutdown.
 
     Args:
         app: FastAPI application instance.
     """
     app.state.grapes = await get_grapes()
     app.state.wine_styles = await get_wine_styles()
-    logger.info(f"Loaded grape ID mapping, size: {len(app.state.grapes)}")
-    logger.info(f"Loaded wine style ID mapping, size: {len(app.state.wine_styles)}")
+    logger.info("Loaded grape ID mapping, size: %d", len(app.state.grapes))
+    logger.info("Loaded wine style ID mapping, size: %d", len(app.state.wine_styles))
     yield
+    await close_client()
 
 
 app = FastAPI(lifespan=lifespan)
