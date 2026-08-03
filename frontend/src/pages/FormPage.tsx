@@ -5,7 +5,6 @@ import { uploadFile } from '../services/api';
 
 function FormPage() {
   const { setFileStatus, setWineList } = useWineContext();
-  // const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,

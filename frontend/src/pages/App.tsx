@@ -3,7 +3,6 @@ import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus } from '../utils/constants';
 import FilterableWineList from './FilterableWineList';
 import FormPage from './FormPage';
-// import { Routes, Route, Link } from 'react-router-dom';
 
 function App() {
   const { fileStatus, setFileStatus, wineList } = useWineContext();
@@ -42,7 +41,6 @@ function App() {
       <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 mx-auto">
         {renderContent()}
       </main>
-      <footer>{/* <p>----footer text----</p> */}</footer>
     </>
   );
 }
