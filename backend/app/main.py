@@ -5,7 +5,11 @@ import os
 import io
 
 from contextlib import asynccontextmanager
-from app.core.config import FRONTEND_ORIGINS, SORENSEN_DICE_N
+from app.core.config import (
+    FRONTEND_ORIGINS,
+    MAX_UPLOAD_SIZE_BYTES,
+    SORENSEN_DICE_N,
+)
 from app.core.logging import setup_logging
 from app.core.exceptions import UpstreamServiceError
 from app.services.gemini import extract_wine_details_from_file
@@ -115,9 +119,12 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF file.")
 
+    pdf_contents = await file.read()
+    if len(pdf_contents) > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds the 10MB size limit.")
+
     try:
         logger.info("Processing file: %s", file.filename)
-        pdf_contents = await file.read()
         wine_details = await extract_wine_details_from_file(io.BytesIO(pdf_contents))
         logger.debug("Gemini extracted data: %s", wine_details)
         wine_details = await get_vivino_data_all(wine_details)

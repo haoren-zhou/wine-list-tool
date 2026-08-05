@@ -21,6 +21,8 @@ MOCK_GEMINI_RESPONSE = os.getenv("MOCK_GEMINI_RESPONSE", "false").lower() in (
 )
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 SORENSEN_DICE_N = int(os.getenv("SORENSEN_DICE_N", 2))
+# Matches the frontend validation and nginx client_max_body_size
+MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 
 # Mock mode exists for local development without a real API key.
 if not GEMINI_API_KEY and not MOCK_GEMINI_RESPONSE:

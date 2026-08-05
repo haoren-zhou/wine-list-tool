@@ -1,5 +1,5 @@
 import { useWineContext } from '../hooks/useWineContext';
-import { FileStatus } from '../utils/constants';
+import { FileStatus, MAX_FILE_SIZE_BYTES } from '../utils/constants';
 
 import { uploadFile } from '../services/api';
 
@@ -15,8 +15,7 @@ function FormPage() {
       alert('Please upload a PDF file.');
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      // 10MB limit
+    if (file.size > MAX_FILE_SIZE_BYTES) {
       alert('File size exceeds 10MB limit.');
       return;
     }
