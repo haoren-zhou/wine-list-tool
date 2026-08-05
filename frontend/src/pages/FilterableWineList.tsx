@@ -22,8 +22,7 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
-  // Kept as state so an items-per-page selector can be added to Pagination
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const wineTypes = useMemo(
     () => [...new Set(initialWinelist.map((wine) => wine.type_name))],
@@ -81,9 +80,9 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
   }, [processedWinelist, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    // Reset to page 1 whenever filters change
+    // Reset to page 1 whenever filters or page size change
     setCurrentPage(1);
-  }, [filters]);
+  }, [filters, itemsPerPage]);
 
   useEffect(() => {
     // If there's an active card, check if it's still in the filtered list
@@ -116,6 +115,8 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={setItemsPerPage}
       />
     </div>
   );
