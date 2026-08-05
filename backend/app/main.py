@@ -69,18 +69,16 @@ def health() -> dict[str, str]:
 
 
 def deduplicate_wine_list(wine_details: list[WineDetails]) -> list[WineDetails]:
-    """Deduplicates a list of wine details based on a composite key.
+    """Deduplicates a list of wines based on a composite key.
 
-    This function iterates through a list of wine dictionaries and removes
-    duplicates based on the combined values of 'wine_name', 'vintage', and
-    'volume'.
+    Removes duplicates based on the combined values of 'wine_name',
+    'vintage', and 'volume', keeping the first occurrence.
 
     Args:
-        wine_details: A list of dictionaries, where each dictionary
-                      represents a wine.
+        wine_details: The list of wines to deduplicate.
 
     Returns:
-        A new list of dictionaries with duplicate wines removed.
+        A new list with duplicate wines removed.
     """
     seen = set()
     deduplicated_list = []
@@ -107,12 +105,12 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
     Raises:
         HTTPException:
             - 400: If no file is sent or if the file is not a PDF.
-            - 500: If any error occurs during the PDF processing, data
-              extraction, or API enrichment steps.
+            - 413: If the file exceeds the upload size limit.
+            - 502: If an upstream service (Gemini or Vivino) fails.
+            - 500: If any unexpected error occurs during processing.
 
     Returns:
-        A dictionary containing the filename and a list of dictionaries,
-        where each dictionary represents a unique wine and its information.
+        A list of wine details for each unique wine found in the PDF.
     """
     if not file or file.filename is None:
         raise HTTPException(status_code=400, detail="No upload file sent.")

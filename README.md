@@ -34,7 +34,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
 
 *   Docker and Docker Compose
 *   Node.js and `npm` (for frontend development without Docker)
-*   Python 3.11+ and `uv` (for backend development without Docker)
+*   Python 3.12+ and `uv` (for backend development without Docker)
 
 ### Installation
 
@@ -46,7 +46,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
 
 2.  **Set up environment variables:**
     *   Create a `.env` file in the `backend` directory. You can copy `sample.env` as a template.
-        *   `GOOGLE_API_KEY`: Your Google Gemini API key, from [Google AI Studio](https://aistudio.google.com/apikey).
+        *   `GEMINI_API_KEY`: Your Google Gemini API key, from [Google AI Studio](https://aistudio.google.com/apikey).
         *   `GEMINI_MODEL_ID` *(Optional)*: Specific Gemini model ID, see [Gemini API Docs](https://ai.google.dev/gemini-api/docs/models) for valid model IDs
             *   Default: `gemini-3.5-flash-lite`
 
@@ -75,11 +75,11 @@ The application will be available at http://localhost.
 ### Backend
 
 *   `FRONTEND_ORIGINS`: Comma-separated list of allowed frontend origins for CORS. Change this if deploying service externally.
-*   `GOOGLE_API_KEY` and `GEMINI_MODEL_ID` can also be set here, overriding the `.env` file in the `backend` directory.
+*   `GEMINI_API_KEY` and `GEMINI_MODEL_ID` can also be set here, overriding the `.env` file in the `backend` directory.
 
 ## TODO
 
-*   [ ] Improve error handling in frontend (output meaningful message if error occurs)
+*   [x] Improve error handling in frontend (output meaningful message if error occurs)
 *   [ ] Add screenshots/demo to docs
 *   [ ] Test using event stream to construct wine list from API stream (use `generate_content_stream` instead of `generate_content`)
     *   [ ] Parse JSON format in backend
