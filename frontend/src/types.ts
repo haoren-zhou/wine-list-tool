@@ -20,6 +20,8 @@ export interface Wine {
 }
 
 export interface WineContextType {
+  fileName: string;
+  setFileName: Dispatch<SetStateAction<string>>;
   wineList: Wine[];
   setWineList: Dispatch<SetStateAction<Wine[]>>;
   fileStatus: FileStatus;

@@ -62,8 +62,8 @@ The application will be available at http://localhost.
 
 1.  Navigate to http://localhost.
 2.  Click the upload area, use the keyboard-accessible file picker, or drop a `.pdf` wine list onto the upload area. Processing starts when you select or drop a valid file.
-3.  Review the extracted, matched, and visible counts. The extracted count includes unique name/vintage/volume entries. Unmatched wines keep their original names; temporary lookup failures show a warning instead of removing entries.
-4.  Filter or sort the list. Initial filters include all wines, including unrated entries and prices above the slider range. Use "Reset filters" to restore this view.
+3.  Review the wine count and available ratings. Counts include unique name/vintage/volume entries. Rows show original menu names. Open "Details" beside the missing-rating count for unmatched wines and lookup failures.
+4.  Search, filter, or sort the list. On mobile, open "Filters" to set a rating, budget, type, or format. Enter a whole-dollar budget or leave it unlimited. Initial filters include unrated wines; use "Reset filters" to restore the full list.
 5.  Expand a wine for details, or choose "Upload another file" to start over.
 
 ## Docker Compose Environment Variables

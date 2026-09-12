@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useId } from 'react';
 import type { Wine } from '../types';
-import { getWineKey } from '../utils/wine';
+import { formatPrice, getWineKey } from '../utils/wine';
 
 interface WineListProps {
   winelist: Wine[];
@@ -11,9 +11,15 @@ interface WineListProps {
 
 function WineList({ winelist, activeKey, setActiveKey }: WineListProps) {
   return (
-    <div className="space-y-4">
-      {winelist.length ? (
-        winelist.map((wine) => {
+    <div className="wine-list">
+      <div className="wine-columns" aria-hidden="true">
+        <span>Wine</span>
+        <span>Vivino rating</span>
+        <span>Price</span>
+        <span />
+      </div>
+      <ul>
+        {winelist.map((wine) => {
           const key = getWineKey(wine);
           const isActive = activeKey === key;
           return (
@@ -24,15 +30,8 @@ function WineList({ winelist, activeKey, setActiveKey }: WineListProps) {
               key={key}
             />
           );
-        })
-      ) : (
-        <div className="flex items-center justify-center text-white">
-          <p className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
-            No wines match these filters. Reset filters to see all extracted
-            wines.
-          </p>
-        </div>
-      )}
+        })}
+      </ul>
     </div>
   );
 }
@@ -42,62 +41,123 @@ interface WineCardProps {
   isActive: boolean;
   onToggle: () => void;
 }
-
 function WineCard({ wine, isActive, onToggle }: WineCardProps) {
   const detailsId = useId();
   const matched = wine.enrichment_status === 'matched';
-
+  const rated = matched && wine.rating_average > 0;
+  const typeColor = [
+    'Red',
+    'White',
+    'Rosé',
+    'Sparkling',
+    'Dessert',
+    'Fortified',
+  ].includes(wine.type_name)
+    ? wine.type_name.toLowerCase()
+    : 'other';
   return (
-    <div className="bg-gray-700 rounded-md overflow-hidden">
+    <li className={`wine-card${isActive ? ' is-expanded' : ''}`}>
       <button
         type="button"
-        className="w-full p-4 cursor-pointer text-left"
+        className="wine-row"
         onClick={onToggle}
         aria-expanded={isActive}
         aria-controls={detailsId}
       >
-        <div className="flex items-center justify-between text-white">
-          <div className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
-            {matched && wine.vivino_match ? wine.vivino_match : wine.wine_name}
-          </div>
-          <div className="font-medium text-right text-xs md:text-sm xl:text-base 2xl:text-lg">
-            {matched && wine.rating_average > 0
-              ? `${wine.rating_average} ★ (${wine.rating_count} reviews)`
-              : 'Rating unavailable'}{' '}
-            &middot; {wine.type_name} &middot; ${wine.price}
-            {!matched && (
-              <span className="block">
-                {wine.enrichment_status === 'lookup_failed'
-                  ? 'Temporary lookup failure'
-                  : 'No Vivino match found'}
+        <span className="wine-identity">
+          <span className="wine-name">{wine.wine_name}</span>
+          <span className="wine-meta">
+            <span className={`wine-dot type-${typeColor}`} aria-hidden="true" />
+            {wine.vintage ?? 'Vintage not listed'} · {wine.type_name} ·{' '}
+            {wine.volume} ml
+          </span>
+        </span>
+        <span className="wine-rating">
+          {rated ? (
+            <>
+              <span className="rating-value">
+                {wine.rating_average.toFixed(1)}{' '}
+                <span className="star" aria-hidden="true">
+                  ★
+                </span>
+                <span className="sr-only">stars on Vivino</span>
               </span>
-            )}
-          </div>
-        </div>
+              <span className="rating-caption">
+                {wine.rating_count.toLocaleString('en-US')} reviews
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="unrated">Rating unavailable</span>
+              <span
+                className={`rating-caption${wine.enrichment_status === 'lookup_failed' ? ' lookup-warning' : ''}`}
+              >
+                {wine.enrichment_status === 'lookup_failed'
+                  ? 'Lookup failed'
+                  : matched
+                    ? 'No rating listed'
+                    : 'No Vivino match'}
+              </span>
+            </>
+          )}
+        </span>
+        <span className="wine-price">
+          <span className="sr-only">Price </span>
+          {formatPrice(wine.price)}
+        </span>
+        <svg
+          className="chevron"
+          aria-hidden="true"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="m5 7.5 5 5 5-5" />
+        </svg>
       </button>
-      <div id={detailsId} hidden={!isActive} className="overflow-hidden">
-        <div className="p-4 bg-gray-600 text-gray-200 text-xs md:text-sm xl:text-base 2xl:text-lg">
-          <p>
-            <strong>Name on Wine List:</strong> {wine.wine_name}
-            {matched &&
-              ` (${(wine.match_coefficient * 100).toFixed(0)}% match)`}
-          </p>
-          <p>
-            <strong>Style:</strong> {wine.style_name}
-          </p>
-          <p>
-            <strong>Grapes:</strong> {wine.grapes_name}
-          </p>
-          <p>
-            <strong>Vintage:</strong> {wine.vintage ?? 'N.A.'}
-          </p>
-          <p>
-            <strong>Volume:</strong> {wine.volume} ml
-          </p>
-        </div>
+      <div id={detailsId} hidden={!isActive} className="wine-details">
+        <dl>
+          <div>
+            <dt>Style</dt>
+            <dd>{wine.style_name}</dd>
+          </div>
+          <div>
+            <dt>Grapes</dt>
+            <dd>{wine.grapes_name}</dd>
+          </div>
+          {matched && (
+            <>
+              <div>
+                <dt>Vivino match</dt>
+                <dd>{wine.vivino_match || 'Not available'}</dd>
+              </div>
+              <div>
+                <dt>Name similarity</dt>
+                <dd>
+                  <span
+                    className="similarity-score"
+                    title="Dice similarity: shared character pairs in the two names, ignoring case and punctuation."
+                  >
+                    {(wine.match_coefficient * 100).toFixed(0)}%
+                  </span>
+                </dd>
+              </div>
+            </>
+          )}
+          {!matched && (
+            <div className="unmatched-note">
+              <dt>Rating information</dt>
+              <dd>
+                {wine.enrichment_status === 'lookup_failed'
+                  ? 'The rating service was unavailable. Try uploading again later.'
+                  : 'We couldn’t find a Vivino match. The name and price come from your PDF.'}
+              </dd>
+            </div>
+          )}
+        </dl>
       </div>
-    </div>
+    </li>
   );
 }
-
 export default WineList;

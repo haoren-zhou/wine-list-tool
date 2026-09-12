@@ -1,5 +1,7 @@
-import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { MAX_PRICE_SLIDER_VALUE } from '../utils/constants';
+import { formatPrice } from '../utils/wine';
 
 export interface FilterOptions {
   minRating: number;
@@ -7,6 +9,7 @@ export interface FilterOptions {
   typeFilter: string;
   formatFilter: number;
   sortBy: string;
+  query: string;
 }
 
 interface FiltersProps {
@@ -22,136 +25,130 @@ function Filters({
   filters,
   setFilters,
 }: FiltersProps) {
-  const handleMinRatingChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      minRating: parseFloat(e.target.value),
-    }));
-  };
-
-  const handleMaxPriceChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const sliderValue = parseFloat(e.target.value);
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      // The max slider position represents "no price limit"
-      maxPrice: sliderValue === MAX_PRICE_SLIDER_VALUE ? Infinity : sliderValue,
-    }));
-  };
-
-  const handleTypeFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      typeFilter: e.target.value,
-    }));
-  };
-
-  const handleFormatFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      formatFilter: Number(e.target.value),
-    }));
-  };
-
-  const handleSortByChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      sortBy: e.target.value,
-    }));
-  };
-
+  // Expand for typed budgets, but keep the scale stable while dragging.
+  const [sliderMax, setSliderMax] = useState(MAX_PRICE_SLIDER_VALUE);
+  // Preserve keystrokes while editing; show the whole-dollar budget on blur.
+  const [budgetText, setBudgetText] = useState<string | null>(null);
+  const budgetValue =
+    filters.maxPrice === Infinity ? '' : String(filters.maxPrice);
   return (
-    <div className="text-white width-full mb-4 grid grid-rows-2 grid-cols-12 gap-x-4 text-xs md:text-sm xl:text-base 2xl:text-lg">
-      <div className="col-span-full md:col-span-6">
-        <label className="font-semibold" htmlFor="ratingThreshold">
-          Min. Rating
-        </label>
-        <span className="float-right">
-          {filters.minRating === 0
-            ? 'Any (including unrated)'
-            : filters.minRating.toFixed(1)}
-        </span>
+    <div className="filter-fields">
+      <div className="filter-field">
+        <div className="field-heading">
+          <label htmlFor="ratingThreshold">Min. Rating</label>
+          <span>
+            {filters.minRating === 0 ? 'Any' : filters.minRating.toFixed(1)}
+          </span>
+        </div>
         <input
           type="range"
           min="0"
-          max="5.0"
+          max="5"
           step="0.1"
           id="ratingThreshold"
-          className="w-full"
           value={filters.minRating}
-          onChange={handleMinRatingChange}
+          aria-valuetext={
+            filters.minRating === 0
+              ? 'Any, including unrated'
+              : `${filters.minRating} stars`
+          }
+          onChange={(e) =>
+            setFilters((prev) => ({
+              ...prev,
+              minRating: Number(e.target.value),
+            }))
+          }
         />
       </div>
-      <div className="col-span-full md:col-span-6">
-        <label className="font-semibold" htmlFor="priceThreshold">
-          Max. Price ($)
-        </label>
-        <span className="float-right">
-          {filters.maxPrice === Infinity ? 'No limit' : filters.maxPrice}
-        </span>
+      <div className="filter-field">
+        <div className="field-heading">
+          <label htmlFor="priceThreshold">Max. Price ($)</label>
+          <input
+            className="budget-input"
+            type="number"
+            min="0"
+            step="1"
+            aria-label="Maximum price amount"
+            placeholder="No limit"
+            value={budgetText ?? budgetValue}
+            onFocus={() => setBudgetText(budgetValue)}
+            onBlur={() => setBudgetText(null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setBudgetText(budgetValue);
+            }}
+            onChange={(e) => {
+              if (budgetText !== null) setBudgetText(e.target.value);
+              if (e.target.value === '')
+                setFilters((prev) => ({ ...prev, maxPrice: Infinity }));
+              else if (
+                Number.isFinite(e.target.valueAsNumber) &&
+                e.target.valueAsNumber >= 0
+              ) {
+                const amount = Math.round(e.target.valueAsNumber);
+                setSliderMax((previous) =>
+                  Math.max(previous, Math.ceil(amount / 5) * 5 + 5),
+                );
+                setFilters((prev) => ({ ...prev, maxPrice: amount }));
+              }
+            }}
+          />
+        </div>
         <input
           type="range"
           min="0"
-          max={MAX_PRICE_SLIDER_VALUE}
-          step="5"
+          max={sliderMax}
+          step="1"
           id="priceThreshold"
-          className="w-full"
-          value={
+          value={filters.maxPrice === Infinity ? sliderMax : filters.maxPrice}
+          aria-valuetext={
             filters.maxPrice === Infinity
-              ? MAX_PRICE_SLIDER_VALUE
-              : filters.maxPrice
+              ? 'No price limit'
+              : formatPrice(filters.maxPrice)
           }
-          onChange={handleMaxPriceChange}
+          onChange={(e) =>
+            setFilters((prev) => ({
+              ...prev,
+              maxPrice:
+                Math.round(Number(e.target.value)) === sliderMax
+                  ? Infinity
+                  : Math.round(Number(e.target.value)),
+            }))
+          }
         />
       </div>
-      <div className="col-span-full md:col-span-4 mt-1 md:mt-0">
-        <label className="font-semibold" htmlFor="typeFilter">
-          Wine Type
-        </label>
+      <div className="filter-field">
+        <label htmlFor="typeFilter">Wine Type</label>
         <select
-          className="w-full bg-gray-800 px-2.5 py-2 pr-8 rounded leading-tight"
           id="typeFilter"
           value={filters.typeFilter}
-          onChange={handleTypeFilterChange}
+          onChange={(e) =>
+            setFilters((prev) => ({ ...prev, typeFilter: e.target.value }))
+          }
         >
-          <option value="">All</option>
+          <option value="">All types</option>
           {wineTypes.map((type) => (
             <option key={type}>{type}</option>
           ))}
         </select>
       </div>
-      <div className="col-span-full md:col-span-4 mt-1 md:mt-0">
-        <label className="font-semibold" htmlFor="formatFilter">
-          Format
-        </label>
+      <div className="filter-field">
+        <label htmlFor="formatFilter">Format</label>
         <select
-          className="w-full bg-gray-800 px-2.5 py-2 pr-8 rounded leading-tight"
           id="formatFilter"
           value={filters.formatFilter}
-          onChange={handleFormatFilterChange}
+          onChange={(e) =>
+            setFilters((prev) => ({
+              ...prev,
+              formatFilter: Number(e.target.value),
+            }))
+          }
         >
-          <option value={0}>All</option>
+          <option value={0}>All formats</option>
           {wineFormats.map((format) => (
             <option key={format} value={format}>
               {format} ml
             </option>
           ))}
-        </select>
-      </div>
-      <div className="col-span-full md:col-span-4 mt-1 md:mt-0">
-        <label className="font-semibold" htmlFor="sortByFilter">
-          Sort By
-        </label>
-        <select
-          className="w-full bg-gray-800 px-2.5 py-2 pr-8 rounded leading-tight"
-          id="sortByFilter"
-          value={filters.sortBy}
-          onChange={handleSortByChange}
-        >
-          <option value="default">Default</option>
-          <option value="rating_asc">Rating (Low to High)</option>
-          <option value="rating_desc">Rating (High to Low)</option>
-          <option value="price_asc">Price (Low to High)</option>
-          <option value="price_desc">Price (High to Low)</option>
         </select>
       </div>
     </div>

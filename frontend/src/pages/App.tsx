@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import LoadingSVG from '../components/LoadingSVG';
 import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus } from '../utils/constants';
@@ -12,71 +13,91 @@ function App() {
     setWineList,
     errorMessage,
     setErrorMessage,
+    fileName,
+    setFileName,
   } = useWineContext();
+  const heading = useRef<HTMLHeadingElement>(null);
+  const previousStatus = useRef(fileStatus);
+
+  useEffect(() => {
+    // The upload control disappears after selection. Keep keyboard users oriented.
+    if (
+      previousStatus.current !== fileStatus &&
+      fileStatus !== FileStatus.PROCESSING
+    ) {
+      heading.current?.focus();
+    }
+    previousStatus.current = fileStatus;
+  }, [fileStatus]);
+
   const resetUpload = () => {
     setWineList([]);
+    setFileName('');
     setErrorMessage(null);
     setFileStatus(FileStatus.IDLE);
   };
-  const renderContent = () => {
-    switch (fileStatus) {
-      case FileStatus.PROCESSING:
-        return (
-          <>
+
+  return (
+    <div className="app-shell">
+      <header className="site-header">
+        <span className="wordmark">Wine List Tool</span>
+        {fileStatus === FileStatus.SUCCESS && (
+          <button className="button button-secondary" onClick={resetUpload}>
+            Upload another file
+          </button>
+        )}
+      </header>
+      <main>
+        {fileStatus === FileStatus.IDLE && (
+          <section className="upload-page" aria-labelledby="upload-title">
+            <div className="intro">
+              <h1 id="upload-title" ref={heading} tabIndex={-1}>
+                Upload a wine list
+              </h1>
+            </div>
+            <FormPage />
+          </section>
+        )}
+        {fileStatus === FileStatus.PROCESSING && (
+          <section className="state-panel" aria-labelledby="processing-title">
             <LoadingSVG />
-            <p
-              role="status"
-              className="text-center text-white font-bold text-xs md:text-sm xl:text-base 2xl:text-lg"
-            >
-              Processing your file...
-            </p>
-          </>
-        );
-      case FileStatus.SUCCESS:
-        return (
-          <>
-            <button
-              className="mb-4 px-4 py-2 bg-gray-700 text-white rounded-md cursor-pointer"
-              onClick={resetUpload}
-            >
-              Upload another file
-            </button>
-            <FilterableWineList initialWinelist={wineList} />
-          </>
-        );
-      case FileStatus.ERROR:
-        return (
-          <div className="text-center text-white">
-            <p
-              role="alert"
-              className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl"
-            >
+            <div role="status">
+              <h1 id="processing-title" ref={heading} tabIndex={-1}>
+                Processing your file...
+              </h1>
+              <p className="file-name">{fileName}</p>
+            </div>
+          </section>
+        )}
+        {fileStatus === FileStatus.ERROR && (
+          <section className="state-panel" aria-labelledby="error-title">
+            <h1 id="error-title" ref={heading} tabIndex={-1}>
+              We couldn’t read this list.
+            </h1>
+            <p className="file-name">{fileName}</p>
+            <p role="alert" className="error-message">
               {errorMessage ?? 'Error occurred during file processing.'}
             </p>
-            <button
-              className="mt-4 px-4 py-2 bg-gray-700 rounded-md cursor-pointer"
-              onClick={resetUpload}
-            >
+            <button className="button button-primary" onClick={resetUpload}>
               Try again
             </button>
-          </div>
-        );
-      case FileStatus.IDLE:
-      default:
-        return <FormPage />;
-    }
-  };
-  return (
-    <>
-      <header className="flex bg-gray-800 place-content-center items-center h-16 md:h-20 lg:h-24 xl:h-28">
-        <h1 className="text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-r to-white from-yellow-100">
-          Wine List Tool
-        </h1>
-      </header>
-      <main className="w-9/10 md:w-4/5 xl:w-7/10 mt-4 mx-auto">
-        {renderContent()}
+          </section>
+        )}
+        {fileStatus === FileStatus.SUCCESS && (
+          <section className="results-page" aria-labelledby="results-title">
+            <h1
+              id="results-title"
+              className="sr-only"
+              ref={heading}
+              tabIndex={-1}
+            >
+              Wine results
+            </h1>
+            <FilterableWineList initialWinelist={wineList} />
+          </section>
+        )}
       </main>
-    </>
+    </div>
   );
 }
 

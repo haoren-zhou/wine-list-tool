@@ -92,13 +92,35 @@ it('prevents browser navigation on drag/drop and ignores empty selections', () =
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
+it.each(['', 'application/octet-stream'])(
+  'accepts a PDF extension when the MIME type is %j',
+  async (type) => {
+    upload.mockResolvedValue(partialWines);
+    renderApp();
+    const file = new File(['pdf'], 'menu.PDF', { type });
+    await selectFile('drop', file);
+    expect(await screen.findByText('Showing 3 of 3 wines')).toBeVisible();
+    expect(upload).toHaveBeenCalledExactlyOnceWith(file);
+  },
+);
+
+it('highlights the dropzone until the final nested drag leaves', () => {
+  renderApp();
+  const zone = screen.getByLabelText('Choose PDF file').closest('label')!;
+  fireEvent.dragEnter(zone);
+  fireEvent.dragEnter(zone.querySelector('svg')!);
+  fireEvent.dragLeave(zone.querySelector('svg')!);
+  expect(zone).toHaveClass('is-dragging');
+  fireEvent.dragLeave(zone);
+  expect(zone).not.toHaveClass('is-dragging');
+});
+
 it('provides a keyboard-focusable native file picker', async () => {
   renderApp();
   await userEvent.tab();
   const input = screen.getByLabelText('Choose PDF file');
   expect(input).toHaveFocus();
   expect(input).toHaveAttribute('type', 'file');
-  expect(input).not.toHaveClass('hidden');
 });
 
 it('announces processing and failures, then clears old errors on retry', async () => {
@@ -116,6 +138,7 @@ it('announces processing and failures, then clears old errors on retry', async (
   expect(screen.getByRole('status')).toHaveTextContent(
     'Processing your file...',
   );
+  expect(screen.getByText('wine.pdf')).toBeVisible();
   await act(async () => {
     rejectUpload(new Error('Service unavailable'));
     await Promise.resolve();
@@ -128,11 +151,18 @@ it('announces processing and failures, then clears old errors on retry', async (
     'picker',
     new File(['pdf'], 'wine.pdf', { type: 'application/pdf' }),
   );
-  expect(await screen.findByText(/Extracted: 3/)).toBeVisible();
+  expect(await screen.findByText('Showing 3 of 3 wines')).toBeVisible();
+  const resultHeading = screen.getByRole('heading', { level: 1 });
+  expect(resultHeading).toHaveFocus();
+  await userEvent.tab();
+  expect(screen.getByRole('searchbox')).toHaveFocus();
 });
 
 it('clears results and filters when uploading another file', async () => {
-  upload.mockResolvedValueOnce(partialWines).mockResolvedValueOnce([]);
+  upload
+    .mockResolvedValueOnce(partialWines)
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce(partialWines);
   renderApp();
   const file = new File(['pdf'], 'wine.pdf', { type: 'application/pdf' });
   await selectFile('picker', file);
@@ -143,13 +173,17 @@ it('clears results and filters when uploading another file', async () => {
   await userEvent.click(
     screen.getByRole('button', { name: 'Upload another file' }),
   );
-  expect(screen.queryByText(/Extracted:/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Showing .* wines/)).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   await selectFile('picker', file);
   expect(await screen.findByText(/No wines were extracted/)).toBeVisible();
-  expect(screen.getByLabelText('Min. Rating')).toHaveValue('0');
-  expect(
-    screen.getByText(/Extracted: 0 · Matched: 0 · Visible: 0/),
-  ).toBeVisible();
+  expect(screen.queryByLabelText('Min. Rating')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Per page')).not.toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Upload another file' }),
+  );
+  await selectFile('picker', file);
+  expect(await screen.findByText('Showing 3 of 3 wines')).toBeVisible();
+  expect(screen.getByLabelText('Min. Rating')).toHaveValue('0');
 });

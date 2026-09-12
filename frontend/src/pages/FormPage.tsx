@@ -1,17 +1,29 @@
+import { useRef, useState } from 'react';
 import { useWineContext } from '../hooks/useWineContext';
 import { FileStatus, MAX_FILE_SIZE_BYTES } from '../utils/constants';
-
 import { uploadFile } from '../services/api';
 
 function FormPage() {
-  const { setFileStatus, setWineList, errorMessage, setErrorMessage } =
-    useWineContext();
+  const {
+    setFileStatus,
+    setWineList,
+    errorMessage,
+    setErrorMessage,
+    setFileName,
+  } = useWineContext();
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
+  const uploading = useRef(false);
 
-  // Picker and drop use the same validation and upload path.
   const handleFile = async (file: File | undefined) => {
-    if (!file) return;
+    if (!file || uploading.current) return;
     setErrorMessage(null);
-    if (file.type !== 'application/pdf') {
+    // Some platforms supply no MIME type for local PDFs. This is a UX check,
+    // not a security boundary; the server remains responsible for validation.
+    if (
+      file.type !== 'application/pdf' &&
+      !file.name.toLowerCase().endsWith('.pdf')
+    ) {
       setErrorMessage('Please upload a PDF file.');
       return;
     }
@@ -19,74 +31,78 @@ function FormPage() {
       setErrorMessage('File size exceeds 10MB limit.');
       return;
     }
+    uploading.current = true;
+    setFileName(file.name);
     setFileStatus(FileStatus.PROCESSING);
-
     try {
-      const result = await uploadFile(file);
-      setWineList(result);
+      setWineList(await uploadFile(file));
       setFileStatus(FileStatus.SUCCESS);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Error processing file.',
       );
       setFileStatus(FileStatus.ERROR);
+    } finally {
+      uploading.current = false;
     }
   };
 
   return (
-    <form>
-      <div className="flex items-center justify-center w-full place-self-center">
-        <label
-          htmlFor="dropzone-file"
-          className="flex flex-col items-center justify-center w-full h-96 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 focus-within:ring-2 focus-within:ring-white"
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            void handleFile(event.dataTransfer.files[0]);
-          }}
+    <form className="upload-form" onSubmit={(event) => event.preventDefault()}>
+      <label
+        htmlFor="dropzone-file"
+        className={`dropzone${dragging ? ' is-dragging' : ''}`}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          dragDepth.current += 1;
+          setDragging(true);
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={() => {
+          dragDepth.current = Math.max(0, dragDepth.current - 1);
+          if (dragDepth.current === 0) setDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          dragDepth.current = 0;
+          setDragging(false);
+          void handleFile(event.dataTransfer.files[0]);
+        }}
+      >
+        <svg
+          className="document-icon"
+          aria-hidden="true"
+          viewBox="0 0 32 40"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
         >
-          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <svg
-              className="w-16 h-16 mb-4 text-gray-400"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 20 16"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-              />
-            </svg>
-            <p className="mb-2 text-lg text-gray-400">
-              <span className="font-semibold">Click to upload</span> or drag and
-              drop
-            </p>
-            <p id="upload-hint" className="text-base text-gray-400">
-              PDF only (MAX. 10MB)
-            </p>
-          </div>
-          <input
-            id="dropzone-file"
-            type="file"
-            accept=".pdf"
-            className="sr-only"
-            aria-label="Choose PDF file"
-            aria-describedby={`upload-hint${errorMessage ? ' upload-error' : ''}`}
-            aria-invalid={Boolean(errorMessage)}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = '';
-              void handleFile(file);
-            }}
-          />
-        </label>
-      </div>
+          <path d="M5 1h14l8 8v29H5zM19 1v9h8M10 18h12M10 24h12M10 30h7" />
+        </svg>
+        <span className="button button-primary">Choose PDF</span>
+        <span className="drop-prompt">
+          {dragging ? 'Drop PDF here' : 'or drop a PDF here'}
+        </span>
+        <span id="upload-hint" className="fine-print">
+          PDF only · up to 10 MB
+        </span>
+        <input
+          id="dropzone-file"
+          type="file"
+          accept=".pdf"
+          className="sr-only"
+          aria-label="Choose PDF file"
+          aria-describedby={`upload-hint${errorMessage ? ' upload-error' : ''}`}
+          aria-invalid={Boolean(errorMessage)}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            void handleFile(file);
+          }}
+        />
+      </label>
       {errorMessage && (
-        <p id="upload-error" role="alert" className="mt-4 text-white">
+        <p id="upload-error" role="alert" className="error-message">
           {errorMessage}
         </p>
       )}

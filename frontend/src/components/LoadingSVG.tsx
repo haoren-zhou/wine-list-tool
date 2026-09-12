@@ -7,7 +7,8 @@ function LoadingSVG() {
       viewBox="0 0 1024 1024"
       shapeRendering="geometricPrecision"
       textRendering="geometricPrecision"
-      className="align-center mx-auto size-60 md:size-80 lg:size-100"
+      className="loading-glass"
+      aria-hidden="true"
     >
       <g transform="translate(0 0.000001)">
         <g transform="translate(.000002 0.000001)">
