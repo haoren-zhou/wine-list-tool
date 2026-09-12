@@ -10,14 +10,16 @@ interface FilterableWineListProps {
   initialWinelist: Wine[];
 }
 
+const DEFAULT_FILTERS: FilterOptions = {
+  minRating: 0,
+  maxPrice: Infinity,
+  typeFilter: '',
+  formatFilter: 0,
+  sortBy: 'default',
+};
+
 function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
-  const [filters, setFilters] = useState<FilterOptions>({
-    minRating: 4.0,
-    maxPrice: 1500,
-    typeFilter: '',
-    formatFilter: 0,
-    sortBy: 'default',
-  });
+  const [filters, setFilters] = useState<FilterOptions>(DEFAULT_FILTERS);
   const [activeKey, setActiveKey] = useState<string>('none'); // none if no card is open
 
   // pagination
@@ -39,7 +41,9 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
   const processedWinelist: Wine[] = useMemo(() => {
     const filtered = initialWinelist.filter(
       (wineDetails) =>
-        wineDetails.rating_average >= filters.minRating &&
+        (filters.minRating === 0 ||
+          (wineDetails.enrichment_status === 'matched' &&
+            wineDetails.rating_average >= filters.minRating)) &&
         wineDetails.price <= filters.maxPrice &&
         (filters.typeFilter
           ? wineDetails.type_name === filters.typeFilter
@@ -82,7 +86,7 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
   useEffect(() => {
     // Reset to page 1 whenever filters or page size change
     setCurrentPage(1);
-  }, [filters, itemsPerPage]);
+  }, [filters, itemsPerPage, initialWinelist]);
 
   useEffect(() => {
     // If there's an active card, check if it's still in the filtered list
@@ -98,26 +102,78 @@ function FilterableWineList({ initialWinelist }: FilterableWineListProps) {
     }
   }, [paginatedWinelist, activeKey]);
 
+  const matchedCount = initialWinelist.filter(
+    (wine) => wine.enrichment_status === 'matched',
+  ).length;
+  const unmatchedCount = initialWinelist.filter(
+    (wine) => wine.enrichment_status === 'unmatched',
+  ).length;
+  const failedCount = initialWinelist.filter(
+    (wine) => wine.enrichment_status === 'lookup_failed',
+  ).length;
+
   return (
     <div>
+      <div role="status" className="mb-4 text-white">
+        <p>
+          Extracted: {initialWinelist.length} · Matched: {matchedCount} ·
+          Visible: {processedWinelist.length}
+        </p>
+        <p>
+          Unmatched: {unmatchedCount} · Lookup failed: {failedCount}
+        </p>
+        {(unmatchedCount > 0 || failedCount > 0) && (
+          <p>Partial results: all extracted wines are retained.</p>
+        )}
+        {unmatchedCount > 0 && (
+          <p>
+            No Vivino match found for {unmatchedCount} wine(s). Original names
+            are shown without ratings.
+          </p>
+        )}
+        {failedCount > 0 && (
+          <p>
+            Temporary lookup failure for {failedCount} wine(s). Ratings are
+            unavailable; try uploading again later.
+          </p>
+        )}
+      </div>
       <Filters
         wineTypes={wineTypes}
         wineFormats={wineFormats}
         filters={filters}
         setFilters={setFilters}
       />
-      <WineList
-        winelist={paginatedWinelist}
-        activeKey={activeKey}
-        setActiveKey={setActiveKey}
-      />
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        onItemsPerPageChange={setItemsPerPage}
-      />
+      <button
+        type="button"
+        className="mb-4 px-4 py-2 bg-gray-700 text-white rounded-md cursor-pointer"
+        onClick={() => {
+          setFilters({ ...DEFAULT_FILTERS });
+          setActiveKey('none');
+        }}
+      >
+        Reset filters
+      </button>
+      {initialWinelist.length === 0 ? (
+        <p className="text-white">
+          No wines were extracted from this file. Try another PDF.
+        </p>
+      ) : (
+        <WineList
+          winelist={paginatedWinelist}
+          activeKey={activeKey}
+          setActiveKey={setActiveKey}
+        />
+      )}
+      {processedWinelist.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      )}
     </div>
   );
 }

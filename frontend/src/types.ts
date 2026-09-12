@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { FileStatus } from './utils/constants';
 
 export interface Wine {
+  enrichment_status: 'matched' | 'unmatched' | 'lookup_failed';
   wine_name: string;
   vivino_match: string;
   rating_average: number;

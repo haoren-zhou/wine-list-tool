@@ -4,19 +4,19 @@ import { FileStatus, MAX_FILE_SIZE_BYTES } from '../utils/constants';
 import { uploadFile } from '../services/api';
 
 function FormPage() {
-  const { setFileStatus, setWineList, setErrorMessage } = useWineContext();
+  const { setFileStatus, setWineList, errorMessage, setErrorMessage } =
+    useWineContext();
 
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
+  // Picker and drop use the same validation and upload path.
+  const handleFile = async (file: File | undefined) => {
     if (!file) return;
+    setErrorMessage(null);
     if (file.type !== 'application/pdf') {
-      alert('Please upload a PDF file.');
+      setErrorMessage('Please upload a PDF file.');
       return;
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      alert('File size exceeds 10MB limit.');
+      setErrorMessage('File size exceeds 10MB limit.');
       return;
     }
     setFileStatus(FileStatus.PROCESSING);
@@ -38,7 +38,12 @@ function FormPage() {
       <div className="flex items-center justify-center w-full place-self-center">
         <label
           htmlFor="dropzone-file"
-          className="flex flex-col items-center justify-center w-full h-96 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+          className="flex flex-col items-center justify-center w-full h-96 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 focus-within:ring-2 focus-within:ring-white"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            void handleFile(event.dataTransfer.files[0]);
+          }}
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <svg
@@ -60,17 +65,31 @@ function FormPage() {
               <span className="font-semibold">Click to upload</span> or drag and
               drop
             </p>
-            <p className="text-base text-gray-400">PDF only (MAX. 10MB)</p>
+            <p id="upload-hint" className="text-base text-gray-400">
+              PDF only (MAX. 10MB)
+            </p>
           </div>
           <input
             id="dropzone-file"
             type="file"
             accept=".pdf"
-            className="hidden"
-            onChange={(event) => void handleFileChange(event)}
+            className="sr-only"
+            aria-label="Choose PDF file"
+            aria-describedby={`upload-hint${errorMessage ? ' upload-error' : ''}`}
+            aria-invalid={Boolean(errorMessage)}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              void handleFile(file);
+            }}
           />
         </label>
       </div>
+      {errorMessage && (
+        <p id="upload-error" role="alert" className="mt-4 text-white">
+          {errorMessage}
+        </p>
+      )}
     </form>
   );
 }

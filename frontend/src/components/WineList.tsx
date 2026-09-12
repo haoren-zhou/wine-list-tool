@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useId } from 'react';
 import type { Wine } from '../types';
 import { getWineKey } from '../utils/wine';
 
@@ -28,7 +28,8 @@ function WineList({ winelist, activeKey, setActiveKey }: WineListProps) {
       ) : (
         <div className="flex items-center justify-center text-white">
           <p className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
-            No Matches Found!
+            No wines match these filters. Reset filters to see all extracted
+            wines.
           </p>
         </div>
       )}
@@ -43,17 +44,8 @@ interface WineCardProps {
 }
 
 function WineCard({ wine, isActive, onToggle }: WineCardProps) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [contentHeight, setContentHeight] = useState('0px');
-
-  useEffect(() => {
-    // Set the height of the content for the animation
-    if (contentRef.current) {
-      setContentHeight(
-        isActive ? `${contentRef.current.scrollHeight}px` : '0px',
-      );
-    }
-  }, [isActive]);
+  const detailsId = useId();
+  const matched = wine.enrichment_status === 'matched';
 
   return (
     <div className="bg-gray-700 rounded-md overflow-hidden">
@@ -61,29 +53,34 @@ function WineCard({ wine, isActive, onToggle }: WineCardProps) {
         type="button"
         className="w-full p-4 cursor-pointer text-left"
         onClick={onToggle}
+        aria-expanded={isActive}
+        aria-controls={detailsId}
       >
         <div className="flex items-center justify-between text-white">
           <div className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
-            {wine.vivino_match}
+            {matched && wine.vivino_match ? wine.vivino_match : wine.wine_name}
           </div>
           <div className="font-medium text-right text-xs md:text-sm xl:text-base 2xl:text-lg">
-            {wine.rating_average} &#9733; ({wine.rating_count} reviews) &middot;{' '}
-            {wine.type_name} &middot; ${wine.price}
+            {matched && wine.rating_average > 0
+              ? `${wine.rating_average} ★ (${wine.rating_count} reviews)`
+              : 'Rating unavailable'}{' '}
+            &middot; {wine.type_name} &middot; ${wine.price}
+            {!matched && (
+              <span className="block">
+                {wine.enrichment_status === 'lookup_failed'
+                  ? 'Temporary lookup failure'
+                  : 'No Vivino match found'}
+              </span>
+            )}
           </div>
         </div>
       </button>
-      <div
-        ref={contentRef}
-        style={{
-          maxHeight: `${contentHeight}`,
-          transition: 'max-height 0.3s ease-in-out',
-        }}
-        className="overflow-hidden"
-      >
+      <div id={detailsId} hidden={!isActive} className="overflow-hidden">
         <div className="p-4 bg-gray-600 text-gray-200 text-xs md:text-sm xl:text-base 2xl:text-lg">
           <p>
-            <strong>Name on Wine List:</strong> {wine.wine_name} (
-            {(wine.match_coefficient * 100).toFixed(0)}% match)
+            <strong>Name on Wine List:</strong> {wine.wine_name}
+            {matched &&
+              ` (${(wine.match_coefficient * 100).toFixed(0)}% match)`}
           </p>
           <p>
             <strong>Style:</strong> {wine.style_name}
@@ -92,7 +89,10 @@ function WineCard({ wine, isActive, onToggle }: WineCardProps) {
             <strong>Grapes:</strong> {wine.grapes_name}
           </p>
           <p>
-            <strong>Volume:</strong> {wine.volume}
+            <strong>Vintage:</strong> {wine.vintage ?? 'N.A.'}
+          </p>
+          <p>
+            <strong>Volume:</strong> {wine.volume} ml
           </p>
         </div>
       </div>

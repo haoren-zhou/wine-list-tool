@@ -66,11 +66,13 @@ function Filters({
           Min. Rating
         </label>
         <span className="float-right">
-          {Number(filters.minRating).toFixed(1)}
+          {filters.minRating === 0
+            ? 'Any (including unrated)'
+            : filters.minRating.toFixed(1)}
         </span>
         <input
           type="range"
-          min="3.0"
+          min="0"
           max="5.0"
           step="0.1"
           id="ratingThreshold"
@@ -84,7 +86,7 @@ function Filters({
           Max. Price ($)
         </label>
         <span className="float-right">
-          {filters.maxPrice === Infinity ? '-' : filters.maxPrice}
+          {filters.maxPrice === Infinity ? 'No limit' : filters.maxPrice}
         </span>
         <input
           type="range"

@@ -5,32 +5,59 @@ import FilterableWineList from './FilterableWineList';
 import FormPage from './FormPage';
 
 function App() {
-  const { fileStatus, setFileStatus, wineList, errorMessage } =
-    useWineContext();
+  const {
+    fileStatus,
+    setFileStatus,
+    wineList,
+    setWineList,
+    errorMessage,
+    setErrorMessage,
+  } = useWineContext();
+  const resetUpload = () => {
+    setWineList([]);
+    setErrorMessage(null);
+    setFileStatus(FileStatus.IDLE);
+  };
   const renderContent = () => {
     switch (fileStatus) {
       case FileStatus.PROCESSING:
         return (
           <>
             <LoadingSVG />
-            <p className="text-center text-white font-bold text-xs md:text-sm xl:text-base 2xl:text-lg">
+            <p
+              role="status"
+              className="text-center text-white font-bold text-xs md:text-sm xl:text-base 2xl:text-lg"
+            >
               Processing your file...
             </p>
           </>
         );
       case FileStatus.SUCCESS:
-        return <FilterableWineList initialWinelist={wineList} />;
+        return (
+          <>
+            <button
+              className="mb-4 px-4 py-2 bg-gray-700 text-white rounded-md cursor-pointer"
+              onClick={resetUpload}
+            >
+              Upload another file
+            </button>
+            <FilterableWineList initialWinelist={wineList} />
+          </>
+        );
       case FileStatus.ERROR:
         return (
           <div className="text-center text-white">
-            <p className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl">
+            <p
+              role="alert"
+              className="font-semibold text-sm md:text-base xl:text-lg 2xl:text-xl"
+            >
               {errorMessage ?? 'Error occurred during file processing.'}
             </p>
             <button
               className="mt-4 px-4 py-2 bg-gray-700 rounded-md cursor-pointer"
-              onClick={() => setFileStatus(FileStatus.IDLE)}
+              onClick={resetUpload}
             >
-              Back
+              Try again
             </button>
           </div>
         );
