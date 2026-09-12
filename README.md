@@ -6,7 +6,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
 
 *   Upload a PDF wine list.
 *   Extract wine names from the PDF using Google's Gemini API.
-*   Enrich wine data with information from the Vivino API.
+*   Enrich wine data with information from the Vivino API while keeping unmatched wines and failed lookups visible.
 *   Calculate the Vivino match similarity with the original wine name using Sorensen-Dice coefficient.
 *   Display the enriched wine list in a filterable and sortable format.
 *   Containerized with Docker for easy setup and deployment.
@@ -45,7 +45,7 @@ This is a web application that allows users to upload a PDF of a wine list, and 
     ```
 
 2.  **Set up environment variables:**
-    *   Create a `.env` file in the `backend` directory. You can copy `sample.env` as a template.
+    *   Create a `.env` file in the `backend` directory. You can copy `sample.env` as a template. Docker Compose loads this file at runtime; the image excludes it.
         *   `GEMINI_API_KEY`: Your Google Gemini API key, from [Google AI Studio](https://aistudio.google.com/apikey).
         *   `GEMINI_MODEL_ID` *(Optional)*: Specific Gemini model ID, see [Gemini API Docs](https://ai.google.dev/gemini-api/docs/models) for valid model IDs
             *   Default: `gemini-3.5-flash-lite`
@@ -61,10 +61,10 @@ The application will be available at http://localhost.
 ## Usage
 
 1.  Navigate to http://localhost.
-2.  Click the "Choose File" button and select a `.pdf` wine list.
-3.  Click "Upload".
-4.  The application will process the PDF, and the extracted and enriched wine list will be displayed.
-5.  You can filter the list by various criteria and sort by price or Vivino rating.
+2.  Click the upload area, use the keyboard-accessible file picker, or drop a `.pdf` wine list onto the upload area. Processing starts when you select or drop a valid file.
+3.  Review the extracted, matched, and visible counts. The extracted count includes unique name/vintage/volume entries. Unmatched wines keep their original names; temporary lookup failures show a warning instead of removing entries.
+4.  Filter or sort the list. Initial filters include all wines, including unrated entries and prices above the slider range. Use "Reset filters" to restore this view.
+5.  Expand a wine for details, or choose "Upload another file" to start over.
 
 ## Docker Compose Environment Variables
 
@@ -76,6 +76,16 @@ The application will be available at http://localhost.
 
 *   `FRONTEND_ORIGINS`: Comma-separated list of allowed frontend origins for CORS. Change this if deploying service externally.
 *   `GEMINI_API_KEY` and `GEMINI_MODEL_ID` can also be set here, overriding the `.env` file in the `backend` directory.
+*   `VIVINO_CACHE_PATH`: Optional reference-mapping cache path, default `.cache/vivino-mappings.json`. Compose persists `/app/.cache` in a named volume. Cached mappings allow startup during a Vivino outage; without a cache, unavailable grape/style names display as `N.A.`. See [backend documentation](backend/README.md) for refresh and cleanup behavior.
+
+## Checks
+
+```bash
+(cd backend && uv run --locked pytest && uv run --locked ruff check .)
+(cd frontend && npm ci && npm test && npm run lint && npm run build)
+```
+
+The tests mock Gemini and Vivino, so they do not upload documents or require API access.
 
 ## TODO
 
