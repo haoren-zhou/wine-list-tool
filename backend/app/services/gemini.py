@@ -1,19 +1,22 @@
+import asyncio
 import json
+import logging
 from typing import BinaryIO
 
-from google import genai
+from google.genai.client import AsyncClient
 from google.genai import errors as genai_errors
 from google.genai.types import GenerateContentConfig, ThinkingConfig, ThinkingLevel
 
-from app.core.config import GEMINI_API_KEY, GEMINI_MODEL_ID, MOCK_GEMINI_RESPONSE
+from app.core.config import GEMINI_MODEL_ID, MOCK_GEMINI_RESPONSE
 from app.core.exceptions import GeminiError
 from app.core.schemas import WineDetailsBase
 
-# The client requires a real API key, so only create it when not mocking.
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+logger = logging.getLogger("backend.app")
 
 
-async def extract_wine_details_from_file(pdf: BinaryIO) -> list[WineDetailsBase]:
+async def extract_wine_details_from_file(
+    pdf: BinaryIO, client: AsyncClient | None
+) -> list[WineDetailsBase]:
     """Extracts wine details from a PDF file using the Gemini API."""
     if MOCK_GEMINI_RESPONSE:
         return [
@@ -68,12 +71,13 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[WineDetailsBase]
     if client is None:
         # Unreachable: config validation requires a key when not mocking.
         raise GeminiError("Gemini client is not configured")
+    uploaded_file = None
     try:
-        uploaded_file = await client.aio.files.upload(
+        uploaded_file = await client.files.upload(
             file=pdf,  # type: ignore
             config={"mime_type": "application/pdf"},
         )
-        response = await client.aio.models.generate_content(
+        response = await client.models.generate_content(
             model=GEMINI_MODEL_ID,
             contents=[uploaded_file, "\n\n", prompt],
             config=GenerateContentConfig(
@@ -83,10 +87,22 @@ async def extract_wine_details_from_file(pdf: BinaryIO) -> list[WineDetailsBase]
                 thinking_config=ThinkingConfig(thinking_level=ThinkingLevel.MINIMAL),
             ),
         )
+        if not isinstance(response.parsed, list):
+            raise GeminiError("Gemini returned no valid extraction result")
+        # A parsed empty list is a valid extraction; absent/blocked output isn't.
+        return [WineDetailsBase.model_validate(wine) for wine in response.parsed]
     except genai_errors.APIError as e:
         raise GeminiError(f"Gemini API request failed: {e}") from e
-    if response.text is None:
-        return []
-    if response.parsed is None:
-        raise GeminiError("Gemini returned data that did not match the expected schema")
-    return list(response.parsed)
+    except (ValueError, TypeError) as e:
+        raise GeminiError(
+            "Gemini returned data that did not match the expected schema"
+        ) from e
+    finally:
+        if uploaded_file is not None and uploaded_file.name:
+            try:
+                # Also attempt cleanup after cancellation, without waiting forever.
+                async with asyncio.timeout(10):
+                    await client.files.delete(name=uploaded_file.name)
+            except Exception:
+                # Cleanup must not replace the extraction result or original error.
+                logger.warning("Could not delete uploaded Gemini file", exc_info=True)

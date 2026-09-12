@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -11,6 +13,7 @@ VIVINO_ALGOLIA_API_KEY = "60c11b2f1068885161d95ca068d3a6ae"
 VIVINO_ALGOLIA_APP_ID = "9TAKGWJUXL"
 VIVINO_STYLES_URL = "https://www.vivino.com/api/wine_styles"
 VIVINO_GRAPES_URL = "https://www.vivino.com/api/grapes"
+VIVINO_CACHE_PATH = Path(os.getenv("VIVINO_CACHE_PATH", ".cache/vivino-mappings.json"))
 FRONTEND_ORIGINS = os.getenv(
     "FRONTEND_ORIGINS", "http://localhost:5173,http://localhost:3000"
 )

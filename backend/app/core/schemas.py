@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -14,6 +16,7 @@ class WineDetailsBase(BaseModel):
 
 
 class WineDetails(WineDetailsBase):
+    enrichment_status: Literal["matched", "unmatched", "lookup_failed"] = "unmatched"
     vintage: int | str | None  # Allow vintage to be a string for non-vintage wines
     vivino_match: str = ""
     rating_average: float = 0.0

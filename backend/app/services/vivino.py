@@ -15,17 +15,18 @@ from app.core.schemas import WineDetails, WineDetailsBase
 
 logger = logging.getLogger("backend.app")
 
-# Create a single, reusable client to manage the connection pool.
-# The connection limits bound the number of concurrent requests sent to the
-# Vivino API, so large wine lists are queued instead of overwhelming it.
-client = httpx.AsyncClient(
-    follow_redirects=True,
-    headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    },
-    limits=httpx.Limits(max_connections=10, max_keepalive_connections=10),
-    timeout=httpx.Timeout(10.0, pool=60.0),
-)
+
+def create_client() -> httpx.AsyncClient:
+    """Create a pooled client owned and closed by the application lifespan."""
+    return httpx.AsyncClient(
+        follow_redirects=True,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        limits=httpx.Limits(max_connections=10, max_keepalive_connections=10),
+        timeout=httpx.Timeout(10.0, pool=60.0),
+    )
+
 
 WINE_TYPES = {
     1: "Red",
@@ -37,33 +38,40 @@ WINE_TYPES = {
 }
 
 
-async def close_client() -> None:
-    """Closes the shared HTTP client. Called on application shutdown."""
-    await client.aclose()
-
-
-# API Functions to be executed once
-async def get_wine_styles() -> dict[int, str]:
+async def get_wine_styles(client: httpx.AsyncClient) -> dict[int, str]:
     """Fetches all wine styles id -> name mappings from the Vivino API."""
     try:
         response = await client.get(VIVINO_STYLES_URL)
         response.raise_for_status()
-    except httpx.HTTPError as e:
+        return _parse_mapping(response.json()["wine_styles"])
+    except (httpx.HTTPError, ValueError, KeyError, TypeError) as e:
         raise VivinoError("failed to fetch wine styles") from e
-    return {s["id"]: s["name"] for s in response.json()["wine_styles"]}
 
 
-async def get_grapes() -> dict[int, str]:
+async def get_grapes(client: httpx.AsyncClient) -> dict[int, str]:
     """Fetches all grape types id -> name mappings from the Vivino API."""
     try:
         response = await client.get(VIVINO_GRAPES_URL)
         response.raise_for_status()
-    except httpx.HTTPError as e:
+        return _parse_mapping(response.json()["grapes"])
+    except (httpx.HTTPError, ValueError, KeyError, TypeError) as e:
         raise VivinoError("failed to fetch grapes") from e
-    return {g["id"]: g["name"] for g in response.json()["grapes"]}
 
 
-async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
+def _parse_mapping(items: list[dict]) -> dict[int, str]:
+    mapping = {}
+    for item in items:
+        if type(item["id"]) is not int or not isinstance(item["name"], str):
+            raise ValueError("Invalid Vivino mapping entry")
+        mapping[item["id"]] = item["name"]
+    if not mapping:
+        raise ValueError("Empty Vivino mapping")
+    return mapping
+
+
+async def get_vivino_data(
+    wine_name: str, vintage: int | None, client: httpx.AsyncClient
+) -> dict | None:
     """Queries Vivino's public Algolia API for wine data.
 
     Returns a dict of Vivino data for the top matching vintage, or None if
@@ -94,8 +102,7 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
         )
         response.raise_for_status()
     except httpx.HTTPError as e:
-        logger.warning("Vivino request failed for '%s': %s", query, e)
-        return None
+        raise VivinoError("Vivino lookup request failed") from e
     results = response.json()
     if results["nbHits"] == 0:
         return None
@@ -120,66 +127,66 @@ async def get_vivino_data(wine_name: str, vintage: int | None) -> dict | None:
 
 async def get_vivino_data_all(
     wine_details: list[WineDetailsBase],
+    client: httpx.AsyncClient,
+    semaphore: asyncio.Semaphore,
 ) -> list[WineDetails]:
-    """Gets Vivino data for all wines in a list concurrently.
-    Removes wines that are not found in Vivino or do not have sufficient
-    reviews for a rating.
+    """Enrich every wine, preserving missing matches and failed lookups.
 
-    Args:
-        wine_details: The wines extracted from the wine list.
-
-    Returns:
-        A new list of wines, enriched with Vivino data.
+    Reuse each name/vintage lookup across formats within this upload. The
+    application-wide semaphore bounds active lookups across concurrent uploads.
     """
-    tasks = [get_vivino_data(wine.wine_name, wine.vintage) for wine in wine_details]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    updated_wine_details = []
-    for original_wine, vivino_data in zip(wine_details, results):
-        if isinstance(vivino_data, Exception):
-            logger.warning(
-                "Skipping wine '%s': %s",
-                original_wine.wine_name,
-                vivino_data,
-            )
-            continue
-        if vivino_data:
-            # Vivino may return unexpected types for these fields
-            type_id = (
-                vivino_data["type_id"]
-                if isinstance(vivino_data["type_id"], int)
-                else -1
-            )
-            style_id = (
-                vivino_data["style_id"]
-                if isinstance(vivino_data["style_id"], int)
-                else -1
-            )
-            grapes = (
-                vivino_data["grapes"]
-                if isinstance(vivino_data["grapes"], list)
-                else None
-            )
+    async def lookup(wine_name: str, vintage: int | None) -> dict | None:
+        async with semaphore:
+            return await get_vivino_data(wine_name, vintage, client)
 
-            new_wine_details = WineDetails(
-                wine_name=original_wine.wine_name,
-                vintage=(
-                    original_wine.vintage
-                    if original_wine.vintage is not None
-                    else "N.V."
-                ),
-                price=original_wine.price,
-                volume=original_wine.volume,
-                vivino_match=vivino_data["vivino_match"],
-                rating_average=vivino_data["rating_average"],
-                rating_count=vivino_data["rating_count"],
-                type_id=type_id,
-                style_id=style_id,
-                grapes=grapes,
-            )
-            updated_wine_details.append(new_wine_details)
+    keys = list(dict.fromkeys((w.wine_name, w.vintage) for w in wine_details))
+    results = await asyncio.gather(
+        *(lookup(name, vintage) for name, vintage in keys), return_exceptions=True
+    )
+    lookups = dict(zip(keys, results))
 
-    return updated_wine_details
+    enriched = []
+    for wine in wine_details:
+        result = lookups[(wine.wine_name, wine.vintage)]
+        original = wine.model_dump()
+        original["vintage"] = wine.vintage if wine.vintage is not None else "N.V."
+        if isinstance(result, BaseException):
+            # Never convert cancellation into a successful partial response.
+            if not isinstance(result, Exception):
+                raise result
+            logger.warning("Vivino lookup failed for '%s': %s", wine.wine_name, result)
+            enriched.append(WineDetails(**original, enrichment_status="lookup_failed"))
+        elif result is None:
+            enriched.append(WineDetails(**original, enrichment_status="unmatched"))
+        else:
+            # Validate each result independently so a malformed hit cannot lose
+            # this wine or abort the other wines in the upload.
+            try:
+                enriched.append(
+                    WineDetails(
+                        **original,
+                        enrichment_status="matched",
+                        vivino_match=result["vivino_match"],
+                        rating_average=result["rating_average"],
+                        rating_count=result["rating_count"],
+                        type_id=result["type_id"]
+                        if type(result["type_id"]) is int
+                        else -1,
+                        style_id=result["style_id"]
+                        if type(result["style_id"]) is int
+                        else -1,
+                        grapes=result["grapes"]
+                        if isinstance(result["grapes"], list)
+                        else None,
+                    )
+                )
+            except (ValueError, KeyError, TypeError):
+                logger.warning("Invalid Vivino data for '%s'", wine.wine_name)
+                enriched.append(
+                    WineDetails(**original, enrichment_status="lookup_failed")
+                )
+    return enriched
 
 
 def update_vivino_ids_to_names(

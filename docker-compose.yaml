@@ -26,6 +26,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    volumes:
+      - vivino-cache:/app/.cache
     environment:
       # local testing; change this if deploying service externally
       - FRONTEND_ORIGINS=http://localhost
@@ -36,6 +38,9 @@ services:
       retries: 3
     networks:
       - back-tier
+
+volumes:
+  vivino-cache:
 
 networks:
   front-tier:

@@ -1,27 +1,32 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Request
+from google import genai
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import os
 import io
 
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
+from typing import TypeVar
 from app.core.config import (
     FRONTEND_ORIGINS,
     MAX_UPLOAD_SIZE_BYTES,
     SORENSEN_DICE_N,
+    GEMINI_API_KEY,
+    MOCK_GEMINI_RESPONSE,
+    VIVINO_CACHE_PATH,
 )
 from app.core.logging import setup_logging
 from app.core.exceptions import UpstreamServiceError
 from app.services.gemini import extract_wine_details_from_file
 from app.services.vivino import (
-    close_client,
+    create_client,
     get_vivino_data_all,
     update_vivino_ids_to_names,
-    get_grapes,
-    get_wine_styles,
 )
+from app.services.vivino_cache import load_mappings
 from app.services.similarity import update_wine_similarity
-from app.core.schemas import WineDetails
+from app.core.schemas import WineDetails, WineDetailsBase
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_root = os.path.dirname(current_dir)
@@ -33,20 +38,24 @@ logger = logging.getLogger("backend.app")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Asynchronous context manager for FastAPI.
-
-    Loads static data for grapes and wine styles on startup, and releases
-    the shared Vivino HTTP client on shutdown.
-
-    Args:
-        app: FastAPI application instance.
-    """
-    app.state.grapes = await get_grapes()
-    app.state.wine_styles = await get_wine_styles()
-    logger.info("Loaded grape ID mapping, size: %d", len(app.state.grapes))
-    logger.info("Loaded wine style ID mapping, size: %d", len(app.state.wine_styles))
-    yield
-    await close_client()
+    """Own service clients and refresh reference data with cached fallbacks."""
+    async with AsyncExitStack() as stack:
+        app.state.vivino_client = await stack.enter_async_context(create_client())
+        app.state.vivino_semaphore = asyncio.Semaphore(10)
+        app.state.gemini_client = None
+        if not MOCK_GEMINI_RESPONSE:
+            gemini = genai.Client(api_key=GEMINI_API_KEY)
+            # The SDK maintains separate synchronous and asynchronous transports.
+            stack.callback(gemini.close)
+            app.state.gemini_client = await stack.enter_async_context(gemini.aio)
+        mappings = await load_mappings(app.state.vivino_client, VIVINO_CACHE_PATH)
+        app.state.grapes = mappings["grapes"]
+        app.state.wine_styles = mappings["wine_styles"]
+        logger.info("Loaded grape ID mapping, size: %d", len(app.state.grapes))
+        logger.info(
+            "Loaded wine style ID mapping, size: %d", len(app.state.wine_styles)
+        )
+        yield
 
 
 app = FastAPI(lifespan=lifespan)
@@ -68,7 +77,10 @@ def health() -> dict[str, str]:
     return {"message": "health ok"}
 
 
-def deduplicate_wine_list(wine_details: list[WineDetails]) -> list[WineDetails]:
+Wine = TypeVar("Wine", bound=WineDetailsBase)
+
+
+def deduplicate_wine_list(wine_details: list[Wine]) -> list[Wine]:
     """Deduplicates a list of wines based on a composite key.
 
     Removes duplicates based on the combined values of 'wine_name',
@@ -92,12 +104,14 @@ def deduplicate_wine_list(wine_details: list[WineDetails]) -> list[WineDetails]:
 
 
 @app.post("/upload", response_model=list[WineDetails])
-async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
+async def parse_pdf(
+    request: Request, file: UploadFile | None = None
+) -> list[WineDetails]:
     """Parses an uploaded PDF file to extract, enrich, and return wine details.
 
     This endpoint accepts a PDF file, extracts wine names using the Gemini API,
-    enriches the data with information from the Vivino API, deduplicates the
-    results, and returns a final list of wine details.
+    deduplicates extracted wines, and enriches them with Vivino data. Wines
+    without a match or with a failed lookup remain in the returned list.
 
     Args:
         file: An uploaded file object, expected to be a PDF.
@@ -106,7 +120,7 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
         HTTPException:
             - 400: If no file is sent or if the file is not a PDF.
             - 413: If the file exceeds the upload size limit.
-            - 502: If an upstream service (Gemini or Vivino) fails.
+            - 502: If Gemini fails to extract a valid wine list.
             - 500: If any unexpected error occurs during processing.
 
     Returns:
@@ -123,14 +137,19 @@ async def parse_pdf(file: UploadFile | None = None) -> list[WineDetails]:
 
     try:
         logger.info("Processing file: %s", file.filename)
-        wine_details = await extract_wine_details_from_file(io.BytesIO(pdf_contents))
-        logger.debug("Gemini extracted data: %s", wine_details)
-        wine_details = await get_vivino_data_all(wine_details)
-        wine_details = deduplicate_wine_list(wine_details)
+        extracted = await extract_wine_details_from_file(
+            io.BytesIO(pdf_contents), request.app.state.gemini_client
+        )
+        logger.debug("Gemini extracted data: %s", extracted)
+        wine_details = await get_vivino_data_all(
+            deduplicate_wine_list(extracted),
+            request.app.state.vivino_client,
+            request.app.state.vivino_semaphore,
+        )
         wine_details = update_vivino_ids_to_names(
             wine_details=wine_details,
-            grapes_map=app.state.grapes,
-            styles_map=app.state.wine_styles,
+            grapes_map=request.app.state.grapes,
+            styles_map=request.app.state.wine_styles,
         )
         wine_details = update_wine_similarity(wine_details, n=SORENSEN_DICE_N)
 
