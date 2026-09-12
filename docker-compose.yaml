@@ -24,6 +24,8 @@ services:
     container_name: wine-list-tool-backend
     build: ./backend
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
     environment:
       # local testing; change this if deploying service externally
       - FRONTEND_ORIGINS=http://localhost
